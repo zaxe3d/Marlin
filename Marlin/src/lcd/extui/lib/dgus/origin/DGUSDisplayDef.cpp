@@ -211,6 +211,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
     #endif
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
       VPHELPER(VP_E0_FILAMENT_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleFilamentOption, &ScreenHandler.HandleFilamentLoadUnload),
+      
     #endif
   #endif
   #if HOTENDS >= 2

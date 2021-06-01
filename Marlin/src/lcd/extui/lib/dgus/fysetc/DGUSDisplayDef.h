@@ -23,28 +23,42 @@
 
 enum DGUSLCD_Screens : uint8_t {
   DGUSLCD_SCREEN_BOOT                =   0,
+  DGUSLCD_SCREEN_MOVEMENT_X          =  62, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_Y          =  63, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_Z          =  64, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_E          =  65, //Elsan
+  DGUSLCD_SCREEN_FIRST_LAYER_CAL     =  32, //Elsan
   DGUSLCD_SCREEN_MAIN                =   1,
   DGUSLCD_SCREEN_STATUS              =   1,
   DGUSLCD_SCREEN_STATUS2             =   1,
   DGUSLCD_SCREEN_TEMPERATURE         =  10,
   DGUSLCD_SCREEN_PREHEAT             =  18,
+  DGUSLCD_SCREEN_CALIBRATION         =  30, //Elsan
+  DGUSLCD_SCREEN_CALIBRATION_HEATING =  38, //Elsan
   DGUSLCD_SCREEN_POWER_LOSS          = 100,
   DGUSLCD_SCREEN_MANUALMOVE          = 192,
-  DGUSLCD_SCREEN_UTILITY             = 120,
+  DGUSLCD_SCREEN_UTILITY             = 120,  
+  DGUSLCD_SCREEN_SD_FILAMENT_LOAD    =  23,
+  DGUSLCD_SCREEN_SD_FILAMENT_UNLOAD  =  24,
+  DGUSLCD_SCREEN_SD_FILAMENT_RUNOUT  =  25,
   DGUSLCD_SCREEN_FILAMENT_HEATING    = 146,
   DGUSLCD_SCREEN_FILAMENT_LOADING    = 148,
   DGUSLCD_SCREEN_FILAMENT_UNLOADING  = 158,
   DGUSLCD_SCREEN_MANUALEXTRUDE       = 160,
-  DGUSLCD_SCREEN_SDFILELIST          =  71,
-  DGUSLCD_SCREEN_SDPRINTMANIPULATION =  73,
+  DGUSLCD_SCREEN_SDFILELIST          =  202/*71*/,  //Elsan
+  DGUSLCD_SCREEN_SDPRINTMANIPULATION =  204/*73*/,
+  DGUSLCD_SCREEN_SDPRINTPAUSED       = 206,
   DGUSLCD_SCREEN_SDPRINTTUNE         =  75,
+  DGUSLCD_SCREEN_SDUTILITY           =  22, //Elsan
+  DGUSLCD_SCREEN_SDPRINT_DONE        = 216, //Elsan
   DGUSLCD_SCREEN_FLC_PREHEAT         =  94,
   DGUSLCD_SCREEN_FLC_PRINTING        =  96,
+  DGUSLCD_SCREEN_SDPRINTTUNE_ZOFFSET = 211,
   DGUSLCD_SCREEN_STEPPERMM           = 212,
   DGUSLCD_SCREEN_PID_E               = 214,
   DGUSLCD_SCREEN_PID_BED             = 218,
   DGUSLCD_SCREEN_Z_OFFSET            = 222,
-  DGUSLCD_SCREEN_INFOS               =  36,
+  DGUSLCD_SCREEN_INFOS               = 70 /*36*/,
   DGUSLCD_SCREEN_CONFIRM             = 240,
   DGUSLCD_SCREEN_KILL                = 250, ///< Kill Screen. Must always be 250 (to be able to display "Error wrong LCD Version")
   DGUSLCD_SCREEN_WAITING             = 251,
@@ -116,6 +130,11 @@ constexpr uint16_t VP_MOVE_E1 = 0x2112;
 constexpr uint16_t VP_HOME_ALL = 0x2120;
 constexpr uint16_t VP_MOTOR_LOCK_UNLOK = 0x2130;
 
+constexpr uint16_t VP_MAX_POINTS = 0x2136;  //Elsan
+constexpr uint16_t VP_CALIBRATION_POINTS = 0x2138;  //Elsan
+constexpr uint16_t VP_FAN_ON_OFF = 0x2140;  //Elsan
+constexpr uint16_t VP_END_PREHEAT = 0x2134; //Elsan
+
 // Power loss recovery
 constexpr uint16_t VP_POWER_LOSS_RECOVERY = 0x2180;
 
@@ -142,9 +161,13 @@ constexpr uint16_t VP_E1_BED_PREHEAT = 0x2222;
 //constexpr uint16_t VP_E4_BED_PREHEAT = 0x2228;
 //constexpr uint16_t VP_E5_BED_PREHEAT = 0x222A;
 
+// First layer calibration option
+constexpr uint16_t VP_FIRST_LAYER_CALIBRATION = 0x2296;
+
 // Filament load and unload
 constexpr uint16_t VP_E0_FILAMENT_LOAD_UNLOAD = 0x2300;
 constexpr uint16_t VP_E1_FILAMENT_LOAD_UNLOAD = 0x2302;
+constexpr uint16_t VP_E0_FILAMENT_SD_LOAD_UNLOAD = 0x2304;
 
 // Settings store , reset
 constexpr uint16_t VP_SETTINGS = 0x2400;
@@ -216,6 +239,7 @@ constexpr uint16_t VP_ZPos = 0x3114;  // 4 Byte Fixed point number; format xxx.y
 constexpr uint16_t VP_EPos = 0x3120;  // 4 Byte Fixed point number; format xxx.yy
 
 constexpr uint16_t VP_PrintProgress_Percentage = 0x3130; // 2 Byte Integer (0..100)
+constexpr uint16_t VP_PrintProgress_Progressbar = 0x3132;
 
 constexpr uint16_t VP_PrintTime = 0x3140;
 constexpr uint16_t VP_PrintTime_LEN = 32;
@@ -227,8 +251,9 @@ constexpr uint16_t VP_PrintsTotal = 0x3180;
 constexpr uint16_t VP_PrintsTotal_LEN = 16;
 
 // SDCard File Listing
-constexpr uint16_t VP_SD_FileName_LEN = 32; // LEN is shared for all entries.
+constexpr uint16_t VP_SD_FileName_LEN = 32; // LEN is shared for all entries. Elsan can't be increased.
 constexpr uint16_t DGUS_SD_FILESPERSCREEN = 5; // FIXME move that info to the display and read it from there.
+constexpr uint16_t VP_SD_Refresh_List = 0x3198; // Refresh the list //Elsan
 constexpr uint16_t VP_SD_FileName0 = 0x3200;
 constexpr uint16_t VP_SD_FileName1 = 0x3220;
 constexpr uint16_t VP_SD_FileName2 = 0x3240;

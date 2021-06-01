@@ -32,8 +32,8 @@ typedef unsigned char BLTCommand;
   #define BLTOUCH_STOW          20
 #else
   #define STOW_ALARM          true
-  #define BLTOUCH_DEPLOY        10
-  #define BLTOUCH_STOW          90
+  #define BLTOUCH_DEPLOY        40//10
+  #define BLTOUCH_STOW          160//90
 #endif
 
 #define BLTOUCH_SW_MODE         60

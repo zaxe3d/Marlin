@@ -24,6 +24,7 @@
   SYS_WKUP8 = NC,
 #endif
 /* USB */
+#define USBCON
 #ifdef USBCON
   USB_OTG_FS_SOF      = PA_8,
   USB_OTG_FS_VBUS     = PA_9,

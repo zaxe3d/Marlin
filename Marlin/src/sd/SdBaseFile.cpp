@@ -35,6 +35,22 @@
 
 #include "../inc/MarlinConfig.h"
 
+//Elsan   ////////////////////////////////////////////////////////////////
+#include "../FATFS/App/fatfs.h"
+extern FIL MyFile;                   /* File object */
+FRESULT f_read (
+	FIL* fp, 	/* Pointer to the file object */
+	void* buff,	/* Pointer to data buffer */
+	UINT btr,	/* Number of bytes to read */
+	UINT* br	/* Pointer to number of bytes read */
+);
+FSIZE_t position;
+//#include "cardreader.h" 
+//extern CardReader card; 
+extern char isUSB_fileopen;
+//long int sdpos2=0;  
+///////////////////////////////////////////////////////////////////////////
+
 #if ENABLED(SDSUPPORT)
 
 #include "SdBaseFile.h"
@@ -105,7 +121,9 @@ dir_t* SdBaseFile::cacheDirEntry(uint8_t action) {
 bool SdBaseFile::close() {
   bool rtn = sync();
   type_ = FAT_FILE_TYPE_CLOSED;
-  return rtn;
+  isUSB_fileopen=0;  //Elsan 
+  f_close(&MyFile);  //Elsan
+  return rtn; 
 }
 
 /**
@@ -1008,10 +1026,19 @@ int16_t SdBaseFile::read() {
  * read() called before a file has been opened, corrupt file system
  * or an I/O error occurred.
  */
+
 int16_t SdBaseFile::read(void* buf, uint16_t nbyte) {
   uint8_t* dst = reinterpret_cast<uint8_t*>(buf);
   uint16_t offset, toRead;
   uint32_t block;  // raw device block number
+  FRESULT res;
+  //FSIZE_t position; //Elsan made global for sdpos.
+
+  res = f_read(&MyFile, /*rtext*/buf, /*sizeof(rtext)*/nbyte, (UINT*) /*&bytesread*/&nbyte); //Elsan
+  //position=f_tell(&MyFile);
+  curPosition_=f_tell(&MyFile); //Elsan this is better.
+  //sdpos2=curPosition_; //Test worked but a correction applied to get() from Marlin 2.0.8.1
+  return nbyte; //Elsan remaining part will not be used.
 
   // error if not open or write only
   if (!isOpen() || !(flags_ & O_READ)) return -1;
@@ -1664,6 +1691,12 @@ bool SdBaseFile::truncate(uint32_t length) {
  * for a read-only file, device is full, a corrupt file system or an I/O error.
  */
 int16_t SdBaseFile::write(const void* buf, uint16_t nbyte) {
+
+  //res = f_read(&MyFile, /*rtext*/buf, /*sizeof(rtext)*/nbyte, (UINT*) /*&bytesread*/&nbyte); //Elsan
+  /*res =*/ f_write(&MyFile, /*rtext*/buf, /*sizeof(rtext)*/nbyte, (UINT*) /*&bytesread*/&nbyte); //Elsan
+  curPosition_=f_tell(&MyFile); //Elsan this is better.
+  return nbyte; //Elsan remaining part will not be used.
+
   #if ENABLED(SDCARD_READONLY)
     writeError = true; return -1;
   #endif

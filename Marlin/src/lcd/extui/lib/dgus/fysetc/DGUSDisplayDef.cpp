@@ -177,6 +177,16 @@ const uint16_t VPList_Filament_load_unload[] PROGMEM = {
   0x0000
 };
 
+const uint16_t VPList_SD_Filament_load_unload[] PROGMEM = {
+  #if HOTENDS >= 1
+    VP_E0_FILAMENT_SD_LOAD_UNLOAD,
+  #endif
+  #if HOTENDS >= 2
+    VP_E1_FILAMENT_SD_LOAD_UNLOAD,
+  #endif
+  0x0000
+};
+
 const uint16_t VPList_SDFileList[] PROGMEM = {
   VP_SD_FileName0, VP_SD_FileName1, VP_SD_FileName2, VP_SD_FileName3, VP_SD_FileName4,
   0x0000
@@ -186,6 +196,7 @@ const uint16_t VPList_SD_PrintManipulation[] PROGMEM = {
   VP_PrintProgress_Percentage, VP_PrintTime,
   #if HOTENDS >= 1
     VP_T_E0_Is, VP_T_E0_Set,
+    VP_SD_Print_ProbeOffsetZ,
   #endif
   #if HOTENDS >= 2
     VP_T_E1_Is, VP_T_E1_Set,
@@ -199,7 +210,9 @@ const uint16_t VPList_SD_PrintManipulation[] PROGMEM = {
       VP_Fan1_Percentage,
     #endif
   #endif
+  VP_ZPos,
   VP_Flowrate_E0,
+  VP_PrintProgress_Progressbar,
   0x0000
 };
 
@@ -288,21 +301,73 @@ const uint16_t VPList_Z_Offset[] PROGMEM = {
   0x0000
 };
 
+//Elsan
+const uint16_t VPList_Status_X[] PROGMEM = {
+  VP_XPos,
+  0x0000
+};
+
+const uint16_t VPList_Calibration_heating[] PROGMEM = {
+  #if HAS_HEATED_BED
+    VP_T_E0_Is,
+    VP_T_Bed_Is,
+    VP_FIRST_LAYER_CALIBRATION,
+  #endif
+  0x0000
+};
+
+const uint16_t VPList_Status_Y[] PROGMEM = {
+  VP_YPos,
+  0x0000
+};
+
+const uint16_t VPList_Status_Z[] PROGMEM = {
+  VP_ZPos,
+  0x0000
+};
+
+const uint16_t VPList_Status_E[] PROGMEM = {
+  VP_EPos,
+  0x0000
+};
+
+const uint16_t VPList_First_Layer_Calibration[] PROGMEM = {
+  VP_SD_Print_ProbeOffsetZ,
+  0x0000
+};
+
+const uint16_t VPList_SDPrint_Done[] PROGMEM = {
+  VP_PrintTime,
+  0x0000
+};
+
 const struct VPMapping VPMap[] PROGMEM = {
   { DGUSLCD_SCREEN_BOOT, VPList_Boot },
   { DGUSLCD_SCREEN_MAIN, VPList_Main },
   { DGUSLCD_SCREEN_TEMPERATURE, VPList_Temp },
+  { DGUSLCD_SCREEN_MOVEMENT_X, VPList_Status_X }, //Elsan
+  { DGUSLCD_SCREEN_MOVEMENT_Y, VPList_Status_Y }, //Elsan
+  { DGUSLCD_SCREEN_MOVEMENT_Z, VPList_Status_Z }, //Elsan
+  { DGUSLCD_SCREEN_MOVEMENT_E, VPList_Status_E }, //Elsan
+  { DGUSLCD_SCREEN_FIRST_LAYER_CAL, VPList_First_Layer_Calibration }, //Elsan
   { DGUSLCD_SCREEN_STATUS, VPList_Status },
   { DGUSLCD_SCREEN_STATUS2, VPList_Status2 },
   { DGUSLCD_SCREEN_PREHEAT, VPList_Preheat },
   { DGUSLCD_SCREEN_MANUALMOVE, VPList_ManualMove },
   { DGUSLCD_SCREEN_MANUALEXTRUDE, VPList_ManualExtrude },
+  { DGUSLCD_SCREEN_CALIBRATION_HEATING, VPList_Calibration_heating }, //Elsan
   { DGUSLCD_SCREEN_FILAMENT_HEATING, VPList_Filament_heating },
   { DGUSLCD_SCREEN_FILAMENT_LOADING, VPList_Filament_load_unload },
   { DGUSLCD_SCREEN_FILAMENT_UNLOADING, VPList_Filament_load_unload },
+  { DGUSLCD_SCREEN_SDUTILITY, VPList_SD_Filament_load_unload },
+  { DGUSLCD_SCREEN_SD_FILAMENT_LOAD, VPList_SD_Filament_load_unload },
+  { DGUSLCD_SCREEN_SD_FILAMENT_UNLOAD, VPList_SD_Filament_load_unload },
   { DGUSLCD_SCREEN_SDPRINTMANIPULATION, VPList_SD_PrintManipulation },
+  { DGUSLCD_SCREEN_SDPRINTPAUSED, VPList_SD_PrintManipulation },
   { DGUSLCD_SCREEN_SDFILELIST, VPList_SDFileList },
+  { DGUSLCD_SCREEN_SDPRINTTUNE_ZOFFSET, VPList_Z_Offset },
   { DGUSLCD_SCREEN_SDPRINTTUNE, VPList_SDPrintTune },
+  { DGUSLCD_SCREEN_SDPRINT_DONE, VPList_SDPrint_Done },
   { DGUSLCD_SCREEN_WAITING, VPList_PIDTuningWaiting },
   { DGUSLCD_SCREEN_FLC_PREHEAT, VPList_FLCPreheat },
   { DGUSLCD_SCREEN_FLC_PRINTING, VPList_FLCPrinting },
@@ -329,7 +394,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   VPHELPER(VP_SCREENCHANGE, nullptr, ScreenHandler.ScreenChangeHook, nullptr),
   VPHELPER(VP_SCREENCHANGE_ASK, nullptr, ScreenHandler.ScreenChangeHookIfIdle, nullptr),
   #if ENABLED(SDSUPPORT)
-    VPHELPER(VP_SCREENCHANGE_WHENSD, nullptr, ScreenHandler.ScreenChangeHookIfSD, nullptr),
+    VPHELPER(VP_SCREENCHANGE_WHENSD, nullptr, ScreenHandler./*ScreenChangeHookIfSD*/DGUSLCD_SD_RefreshFilelist, nullptr),
   #endif
   VPHELPER(VP_CONFIRMED, nullptr, ScreenHandler.ScreenConfirmedOK, nullptr),
 
@@ -349,6 +414,8 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
     VPHELPER(VP_HOME_ALL, nullptr, &ScreenHandler.HandleManualMove, nullptr),
   #endif
   VPHELPER(VP_MOTOR_LOCK_UNLOK, nullptr, &ScreenHandler.HandleMotorLockUnlock, nullptr),
+  
+  
   #if ENABLED(POWER_LOSS_RECOVERY)
     VPHELPER(VP_POWER_LOSS_RECOVERY, nullptr, &ScreenHandler.HandlePowerLossRecovery, nullptr),
   #endif
@@ -356,10 +423,15 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   #if ENABLED(SINGLE_Z_CALIBRATION)
     VPHELPER(VP_Z_CALIBRATE, nullptr, &ScreenHandler.HandleZCalibration, nullptr),
   #endif
-
+  VPHELPER(VP_END_PREHEAT, nullptr, &ScreenHandler.HandleEndPreheat, nullptr),
   #if ENABLED(FIRST_LAYER_CAL)
-    VPHELPER(VP_Z_FIRST_LAYER_CAL, nullptr, &ScreenHandler.HandleFirstLayerCal, nullptr),
+    //VPHELPER(VP_Z_FIRST_LAYER_CAL, nullptr, &ScreenHandler.HandleFirstLayerCal, nullptr), //Elsan dis 
+    VPHELPER(VP_FIRST_LAYER_CALIBRATION, nullptr, /*&DGUSScreenHandler*/&ScreenHandler.HandleFirstLayerCalibrationOption, /*&DGUSScreenHandler*/&ScreenHandler.HandleFirstLayerCalibration),
   #endif
+  VPHELPER(VP_CALIBRATION_POINTS, nullptr, /*&DGUSScreenVariableHandler::*/&ScreenHandler.HandleGoToCalibrationPoints, nullptr),   //Elsan
+  VPHELPER(VP_MAX_POINTS, nullptr, /*&DGUSScreenVariableHandler::*/&ScreenHandler.HandleGoToMaximumPoints, nullptr), //Elsan
+  VPHELPER(VP_FAN_ON_OFF, nullptr, /*&DGUSScreenVariableHandler::*/&ScreenHandler.HandleFanOnOff, nullptr),  //Elsan
+
 
   { .VP = VP_MARLIN_VERSION, .memadr = (void*)MarlinVersion, .size = VP_MARLIN_VERSION_LEN, .set_by_display_handler = nullptr, .send_to_display_handler =&ScreenHandler.DGUSLCD_SendStringToDisplayPGM },
   // M117 LCD String (We don't need the string in memory but "just" push it to the display on demand, hence the nullptr
@@ -385,6 +457,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
     #endif
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
       VPHELPER(VP_E0_FILAMENT_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleFilamentOption, &ScreenHandler.HandleFilamentLoadUnload),
+      VPHELPER(VP_E0_FILAMENT_SD_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleSDFilamentOption, &ScreenHandler.HandleSDFilamentLoadUnload),
     #endif
   #endif
   #if HOTENDS >= 2
@@ -431,6 +504,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
 
   // Print Progress
   VPHELPER(VP_PrintProgress_Percentage, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressToDisplay ),
+  VPHELPER(VP_PrintProgress_Progressbar, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressBarToDisplay ),
 
   // Print Time
   VPHELPER_STR(VP_PrintTime, nullptr, VP_PrintTime_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintTimeToDisplay),
@@ -450,7 +524,8 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   #endif
 
   // SDCard File listing.
-  #if ENABLED(SDSUPPORT)
+  //#if ENABLED(SDSUPPORT)
+    VPHELPER(VP_SD_Refresh_List, nullptr, /*DGUSScreenVariableHandler::*/ScreenHandler.DGUSLCD_SD_RefreshFilelist, nullptr),  /*Elsan*/
     VPHELPER(VP_SD_ScrollEvent, nullptr, ScreenHandler.DGUSLCD_SD_ScrollFilelist, nullptr),
     VPHELPER(VP_SD_FileSelected, nullptr, ScreenHandler.DGUSLCD_SD_FileSelected, nullptr),
     VPHELPER(VP_SD_FileSelectConfirm, nullptr, ScreenHandler.DGUSLCD_SD_StartPrint, nullptr),
@@ -468,7 +543,8 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
         VPHELPER(VP_SD_Print_LiveAdjustZ, nullptr, ScreenHandler.HandleLiveAdjustZ, nullptr),
       #endif
     #endif
-  #endif
+  //#endif
+  
 
   #if ENABLED(DGUS_UI_WAITING)
     VPHELPER(VP_WAITING_STATUS, nullptr, nullptr, ScreenHandler.DGUSLCD_SendWaitingStatusToDisplay),

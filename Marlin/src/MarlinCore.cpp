@@ -60,6 +60,94 @@
 #include "sd/cardreader.h"
 
 #include "lcd/ultralcd.h"
+
+//Elsan
+#include "main.h"
+#include "lwip/init.h"
+#include "lwip/netif.h"
+#include "lwip/timeouts.h"
+#include "netif/etharp.h"
+#include "ethernetif.h"
+#include "app_ethernet.h"
+#include "httpserver.h"
+struct netif gnetif;
+static void Netif_Config(void);
+extern "C" void IAP_httpd_init(void);
+extern "C" void ethernetif_input(struct netif *netif);
+extern "C" err_t ethernetif_init(struct netif *netif);
+extern "C" void ethernetif_update_config(struct netif *netif);
+
+//#define HAS_X_ENABLE 1
+//#define HAS_X_DIR 1
+//#define HAS_X_STEP 1
+static void MX_GPIO_Init(void);
+static void MX_USART6_UART_Init(void);
+void HAL_SPI_MspInitTEST(void);
+//extern "C" void SPI3_IRQHandler(void);
+#include "SPI.h"
+//#include <Arduino.h>
+#include "stm32f4xx_ll_spi.h"
+#include "stm32f4xx_ll_bus.h"
+char buff [50];
+volatile byte indx;
+volatile boolean process;
+SPI_HandleTypeDef SpiHandle;
+static SPI_HandleTypeDef spi = { .Instance = SPI3 };
+uint8_t aTxBuffer[] = "*SPI*";
+/* Buffer used for reception */
+uint8_t aRxBuffer[100];
+char output[100];
+unsigned char bufSPI[200];
+unsigned char printBuf[20];
+unsigned char start=0;
+unsigned long int say=0;
+unsigned char bufASCI,bufInvASCI;
+unsigned char bufASCIp;
+long int ASCIcnt=0;
+int ASCIcame=0;
+int InvASCIcame=0;
+char write_perm=1;
+extern char fname2[/*20*/100];
+void usb_file_open_wr(void);
+void usb_ls2(void);
+#include "FATFS/App/fatfs.h"
+extern FIL MyFile;
+inline void SPI3_Transfer(uint8_t *outp, uint8_t *inp, int count);
+int ftp_name_wr=1;
+char fname_ftp[100];
+int fname_cnt=0;
+extern char isUSB_fileopen;
+extern char buf_main[50][200];
+extern int print_stat;
+extern int x_pos, y_pos, z_pos;
+
+#define SPIx                             SPI3
+#define SPIx_CLK_ENABLE()                __HAL_RCC_SPI3_CLK_ENABLE()
+#define SPIx_SCK_GPIO_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define SPIx_MISO_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOC_CLK_ENABLE() 
+#define SPIx_MOSI_GPIO_CLK_ENABLE()      __HAL_RCC_GPIOC_CLK_ENABLE() 
+
+#define SPIx_FORCE_RESET()               __HAL_RCC_SPI3_FORCE_RESET()
+#define SPIx_RELEASE_RESET()             __HAL_RCC_SPI3_RELEASE_RESET()
+
+/* Definition for SPIx Pins */
+#define SPIx_SCK_PIN                     GPIO_PIN_10
+#define SPIx_SCK_GPIO_PORT               GPIOC
+#define SPIx_SCK_AF                      GPIO_AF6_SPI3 //GPIO_AF5_SPI2
+
+#define SPIx_MISO_PIN                    GPIO_PIN_11
+#define SPIx_MISO_GPIO_PORT              GPIOC
+#define SPIx_MISO_AF                     GPIO_AF6_SPI3 //GPIO_AF5_SPI2
+
+#define SPIx_MOSI_PIN                    GPIO_PIN_12
+#define SPIx_MOSI_GPIO_PORT              GPIOC
+#define SPIx_MOSI_AF                     GPIO_AF6_SPI3 //GPIO_AF5_SPI2
+
+/* Definition for SPIx's NVIC */
+#define SPIx_IRQn                        SPI3_IRQn
+#define SPIx_IRQHandler                  SPI3_IRQHandler
+/////////////////////////////////////////////////////////////////////////
+
 #if HAS_TOUCH_XPT2046
   #include "lcd/touch/touch_buttons.h"
 #endif
@@ -444,6 +532,7 @@ void startOrResumeJob() {
 
   inline void abortSDPrinting() {
     card.endFilePrint(TERN_(SD_RESORT, true));
+    
     queue.clear();
     quickstop_stepper();
     print_job_timer.stop();
@@ -456,11 +545,11 @@ void startOrResumeJob() {
       cutter.kill();              // Full cutter shutdown including ISR control
     #endif
     wait_for_heatup = false;
-    TERN_(POWER_LOSS_RECOVERY, recovery.purge());
+    //TERN_(POWER_LOSS_RECOVERY, recovery.purge()); //Elsan dis
     #ifdef EVENT_GCODE_SD_ABORT
-      queue.inject_P(PSTR(EVENT_GCODE_SD_ABORT));
+      queue.inject_P(PSTR(EVENT_GCODE_SD_ABORT)); //Elsan dis G28XY will crash with no HW.
     #endif
-
+    
     TERN_(PASSWORD_AFTER_SD_PRINT_ABORT, password.lock_machine());
   }
 
@@ -700,7 +789,8 @@ void idle(TERN_(ADVANCED_PAUSE_FEATURE, bool no_stepper_sleep/*=false*/)) {
   thermalManager.manage_heater();
 
   // Max7219 heartbeat, animation, etc
-  TERN_(MAX7219_DEBUG, max7219.idle_tasks());
+  //elsan dis
+  //TERN_(MAX7219_DEBUG, max7219.idle_tasks());
 
   // Return if setup() isn't completed
   if (marlin_state == MF_INITIALIZING) return;
@@ -727,9 +817,11 @@ void idle(TERN_(ADVANCED_PAUSE_FEATURE, bool no_stepper_sleep/*=false*/)) {
   #endif
 
   // Handle SD Card insert / remove
-  TERN_(SDSUPPORT, card.manage_media());
+  //elsan dis
+  //TERN_(SDSUPPORT, card.manage_media());
 
   // Handle USB Flash Drive insert / remove
+  
   TERN_(USB_FLASH_DRIVE_SUPPORT, Sd2Card::idle());
 
   // Announce Host Keepalive state (if any)
@@ -742,6 +834,7 @@ void idle(TERN_(ADVANCED_PAUSE_FEATURE, bool no_stepper_sleep/*=false*/)) {
   TERN_(USE_BEEPER, buzzer.tick());
 
   // Handle UI input / draw events
+  
   TERN(DWIN_CREALITY_LCD, DWIN_Update(), ui.update());
 
   // Run i2c Position Encoders
@@ -765,10 +858,12 @@ void idle(TERN_(ADVANCED_PAUSE_FEATURE, bool no_stepper_sleep/*=false*/)) {
   #endif
 
   // Update the Průša MMU2
-  TERN_(PRUSA_MMU2, mmu2.mmu_loop());
+  //elsan dis
+  //TERN_(PRUSA_MMU2, mmu2.mmu_loop());
 
   // Handle Joystick jogging
-  TERN_(POLL_JOG, joystick.inject_jog_moves());
+  //elsan dis
+  //TERN_(POLL_JOG, joystick.inject_jog_moves());
 
   // Direct Stepping
   TERN_(DIRECT_STEPPING, page_manager.write_responses());
@@ -918,6 +1013,45 @@ inline void tmc_standby_setup() {
   #endif
 }
 
+
+static void Netif_Config(void)
+{
+  ip_addr_t ipaddr;
+  ip_addr_t netmask;
+  ip_addr_t gw;
+  
+#ifdef USE_DHCP
+  ip_addr_set_zero_ip4(&ipaddr);
+  ip_addr_set_zero_ip4(&netmask);
+  ip_addr_set_zero_ip4(&gw);
+#else
+  IP_ADDR4(&ipaddr,IP_ADDR0,IP_ADDR1,IP_ADDR2,IP_ADDR3);
+  IP_ADDR4(&netmask,NETMASK_ADDR0,NETMASK_ADDR1,NETMASK_ADDR2,NETMASK_ADDR3);
+  IP_ADDR4(&gw,GW_ADDR0,GW_ADDR1,GW_ADDR2,GW_ADDR3);
+#endif /* USE_DHCP */
+  
+  /* Add the network interface */    
+  netif_add(&gnetif, &ipaddr, &netmask, &gw, NULL, &ethernetif_init, &ethernet_input);
+  
+  /* Registers the default network interface */
+  netif_set_default(&gnetif);
+  
+  if (netif_is_link_up(&gnetif))
+  {
+    /* When the netif is fully configured this function must be called */
+    netif_set_up(&gnetif);
+  }
+  else
+  {
+    /* When the netif link is down this function must be called */
+    netif_set_down(&gnetif);
+  }
+  
+  /* Set the link callback function, this function is called on change of link status*/
+  netif_set_link_callback(&gnetif, ethernetif_update_config);
+}
+
+
 /**
  * Marlin entry-point: Set up before the program loop
  *  - Set up the kill pin, filament runout, power hold
@@ -1024,7 +1158,8 @@ void setup() {
     BOARD_INIT();
   #endif
 
-  SETUP_RUN(esp_wifi_init());
+  //elsan dis
+  //SETUP_RUN(esp_wifi_init());
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   const byte mcu = HAL_get_reset_source();
@@ -1076,10 +1211,12 @@ void setup() {
     DWIN_Frame_SetDir(1); // Orientation 90°
     DWIN_UpdateLCD();     // Show bootscreen (first image)
   #else
+    //elsan dis
     SETUP_RUN(ui.init());
     #if HAS_WIRED_LCD && ENABLED(SHOW_BOOTSCREEN)
       SETUP_RUN(ui.show_bootscreen());
     #endif
+    //elsan dis
     SETUP_RUN(ui.reset_status());     // Load welcome message early. (Retained if no errors exist.)
   #endif
 
@@ -1106,6 +1243,7 @@ void setup() {
 
   SETUP_RUN(stepper.init());          // Init stepper. This enables interrupts!
 
+  //#define HAS_SERVOS 1 //elsan
   #if HAS_SERVOS
     SETUP_RUN(servo_init());
   #endif
@@ -1291,7 +1429,184 @@ void setup() {
   marlin_state = MF_RUNNING;
 
   SETUP_LOG("setup() completed.");
+
+  //Elsan
+  MX_GPIO_Init(); //Moved from usb_ls.
+  //MX_USART6_UART_Init();
+  //Serial3.begin(115200);
+  //USART1->BRR = (45 << 4) | 9;  //Elsan worked, do not touch!!!
+  //USART6->BRR = (45 << 4) | 9;
+  //USART6->BRR = 336;  //Elsan 250000, do not forget to set and restart ESP3D.
+
+  //USART6->BRR = 91;
+  //USART3->BRR = 91;   //Not ok for 921600.
+  //USART3->BRR = 729;  //57600
+  //USART3->BRR = 336;  //128000
+  //USART3->BRR = 556;  //76800
+  //USART3->BRR = 364;  //115200. (168000000/4)/115200.
+  USART3->BRR = 45;     //921600
+
+  //USART1->BRR = 729; //Elsan TFT (DGUS) 115200.
+  //USART2->BRR = 729; //Elsan TFT (DGUS) 115200. For board v2.2
+  USART2->BRR = 364;
+ 
+  indx = 0; // buffer empty
+  process = false;
+    
+  SpiHandle.Instance               = SPIx;
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64; //SPI_BAUDRATEPRESCALER_256; //Elsan ESP12 SPI freq: 656250.
+  SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
+  SpiHandle.Init.CLKPhase          = /*SPI_PHASE_2EDGE*/SPI_PHASE_1EDGE;
+  SpiHandle.Init.CLKPolarity       = /*SPI_POLARITY_LOW*/SPI_POLARITY_HIGH;
+  SpiHandle.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
+  SpiHandle.Init.CRCPolynomial     = 7;
+  SpiHandle.Init.DataSize          = /*SPI_DATASIZE_16BIT*/SPI_DATASIZE_8BIT;
+  SpiHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+  SpiHandle.Init.NSS               = /*SPI_NSS_HARD_OUTPUT*//*SPI_NSS_HARD_INPUT*/SPI_NSS_SOFT;
+  SpiHandle.Init.TIMode            = /*SPI_TIMODE_ENABLE*/ SPI_TIMODE_DISABLE;
+  
+//#ifdef MASTER_BOARD
+  //SpiHandle.Init.Mode = SPI_MODE_MASTER;
+//#else
+  SpiHandle.Init.Mode = SPI_MODE_SLAVE;
+//#endif /* MASTER_BOARD */
+
+  //HAL_SPI_Init(&SpiHandle);
+  //HAL_SPI_MspInitTEST();
+  //SPI3->CR1	= 0x0003;	//CPOL=1, CPHA=1
+  //SPI3->CR1	|= 1<<6;	      //SPI enabled
+  //SPI.attachInterrupt();
+  //SPI3->CR2 = 0x0040;
+  
+  /*
+  // Enable the peripheral clock of GPIOB 
+  LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_GPIOC);
+
+  // Configure SCK Pin connected to pin 31 of CN10 connector 
+  
+  LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_10, LL_GPIO_MODE_ALTERNATE);
+  LL_GPIO_SetAFPin_0_7(GPIOC, LL_GPIO_PIN_10, LL_GPIO_AF_6);
+  LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_10, LL_GPIO_SPEED_FREQ_HIGH);
+  LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_10, LL_GPIO_PULL_UP);
+
+  // Configure MISO Pin connected to pin 27 of CN10 connector 
+  LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_11, LL_GPIO_MODE_ALTERNATE);
+  LL_GPIO_SetAFPin_0_7(GPIOC, LL_GPIO_PIN_11, LL_GPIO_AF_6);
+  LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_11, LL_GPIO_SPEED_FREQ_HIGH);
+  LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_11, LL_GPIO_PULL_UP);
+
+  // Configure MOSI Pin connected to pin 29 of CN7 connector 
+  LL_GPIO_SetPinMode(GPIOC, LL_GPIO_PIN_12, LL_GPIO_MODE_ALTERNATE);
+  LL_GPIO_SetAFPin_0_7(GPIOC, LL_GPIO_PIN_12, LL_GPIO_AF_6);
+  LL_GPIO_SetPinSpeed(GPIOC, LL_GPIO_PIN_12, LL_GPIO_SPEED_FREQ_HIGH);
+  LL_GPIO_SetPinPull(GPIOC, LL_GPIO_PIN_12, LL_GPIO_PULL_UP);
+  
+  //HAL_SPI_MspInitTEST();
+
+  // (2) Configure NVIC for SPI1 transfer complete/error interrupts 
+  // Set priority for SPI1_IRQn 
+  NVIC_SetPriority(SPI3_IRQn, 0);
+  // Enable SPI1_IRQn           
+  NVIC_EnableIRQ(SPI3_IRQn);
+
+  // Enable the peripheral clock of GPIOB 
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_SPI3);
+  // Configure SPI1 communication 
+  LL_SPI_SetBaudRatePrescaler(SPI3, LL_SPI_BAUDRATEPRESCALER_DIV64);
+  LL_SPI_SetTransferDirection(SPI3,LL_SPI_FULL_DUPLEX);
+  LL_SPI_SetClockPhase(SPI3, LL_SPI_PHASE_2EDGE);
+  LL_SPI_SetClockPolarity(SPI3, LL_SPI_POLARITY_HIGH);
+  // Reset value is LL_SPI_MSB_FIRST 
+  //LL_SPI_SetTransferBitOrder(SPI1, LL_SPI_MSB_FIRST);
+  LL_SPI_SetDataWidth(SPI3, LL_SPI_DATAWIDTH_8BIT);
+  LL_SPI_SetNSSMode(SPI3, LL_SPI_NSS_SOFT);//LL_SPI_NSS_HARD_INPUT);
+
+  LL_SPI_SetMode(SPI3, LL_SPI_MODE_SLAVE);
+  // Configure SPI1 transfer interrupts 
+  // Enable RXNE  Interrupt             
+  LL_SPI_EnableIT_RXNE(SPI3);
+  // Enable TXE   Interrupt             
+  //LL_SPI_EnableIT_TXE(SPI3);
+  // Enable Error Interrupt             
+  LL_SPI_EnableIT_ERR(SPI3);
+  */
+
+  //HAL_SPI_MspInitTEST();
+  //NVIC_EnableIRQ(SPI3_IRQn);
+  //LL_SPI_Enable(SPI3); 
+  
+  //SPI3->CR1	= 0x0003;
+  //SPI3->CR1	|= 1<<6;	//SPI enabled
+  //SPI3->CR1	|= 3<<8;  //NSS is ignored.
+  //SPI3->CR1	|= 2<<8;
+  //SPI3->CR1	&= ~(1<<8);	//SSI->0, slave. (inverting)
+  //NVIC_EnableIRQ(SPI3_IRQn);
+  //SPI3->CR1	|= 1<<6;	//SPI enabled
+
+  //Elsan new year 2021.
+  __GPIOC_CLK_ENABLE();
+  __SPI3_CLK_ENABLE();
+  
+//static SPI_HandleTypeDef spi = { .Instance = SPI3 };
+spi.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;  //SPI_BAUDRATEPRESCALER_64 ok,32, 16,8,4,2 also ok
+spi.Init.Direction = SPI_DIRECTION_2LINES;
+spi.Init.CLKPhase = SPI_PHASE_2EDGE; //Both worked
+spi.Init.CLKPolarity = SPI_POLARITY_LOW;  //Do not change.
+spi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
+spi.Init.DataSize = SPI_DATASIZE_8BIT;
+spi.Init.FirstBit = /*SPI_FIRSTBIT_LSB*/SPI_FIRSTBIT_MSB; //Do not change.
+spi.Init.NSS = /*SPI_NSS_HARD_INPUT*/SPI_NSS_SOFT;        //Do not change.
+spi.Init.TIMode = SPI_TIMODE_DISABLED;
+spi.Init.Mode = SPI_MODE_SLAVE; 
+HAL_SPI_Init(&spi);
+
+GPIO_InitTypeDef GPIO_InitStruct;
+GPIO_InitStruct.Pin= GPIO_PIN_11;
+GPIO_InitStruct.Mode= GPIO_MODE_AF_PP;
+GPIO_InitStruct.Pull= GPIO_PULLUP;
+GPIO_InitStruct.Speed= GPIO_SPEED_HIGH;
+GPIO_InitStruct.Alternate= GPIO_AF6_SPI3;
+HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+GPIO_InitStruct.Pin= GPIO_PIN_10 | GPIO_PIN_12;
+GPIO_InitStruct.Mode= GPIO_MODE_AF_OD;
+//GPIO_InitStruct.Mode= GPIO_MODE_AF_PP;  //Elsan addition
+//GPIO_InitStruct.Speed= GPIO_SPEED_HIGH; //Elsan addition
+//GPIO_InitStruct.Pull= GPIO_PULLDOWN;        //Elsan addition
+GPIO_InitStruct.Alternate= GPIO_AF6_SPI3;
+HAL_GPIO_Init(GPIOC, &GPIO_InitStruct); 
+
+  //Elsan polling worked. 
+  //IRQ not worked. Continue with "Polling Mode".
+  //NVIC_SetPriority(SPI3_IRQn, 0);
+  //NVIC_EnableIRQ(SPI3_IRQn);
+  //LL_SPI_EnableIT_RXNE(SPI3);
+  strcpy(output,/*input*/"R");
+  //strcpy(fname2,"SPI.gco");
+  
+  /* Initialize the LwIP stack */
+    lwip_init();
+
+  /* Configure the Network interface */
+    Netif_Config();
+
+  /* Initialize the webserver module */
+    IAP_httpd_init(); 
+
+  /* Notify user about the network interface config */
+    User_notification(&gnetif); 
+
+  //Elsan USB Host
+  __GPIOE_CLK_ENABLE();
+  GPIO_InitStruct.Pin= GPIO_PIN_14;
+  GPIO_InitStruct.Mode= /*GPIO_MODE_OUTPUT_PP*/GPIO_MODE_AF_OD/*GPIO_MODE_OUTPUT_OD*/;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  //HAL_GPIO_WritePin(GPIOE, /*GPIO_PIN_5*/GPIO_PIN_14, GPIO_PIN_RESET);  //Elsan USB Host: Handled in USBH_LL_DriverVBUS.  
+  
+  //for(int a=0;a<50;a++) memset(&buf_main[a][0],0x00,200); //test
 }
+
+
 
 /**
  * The main Marlin program loop
@@ -1306,14 +1621,164 @@ void setup() {
  *    card, host, or by direct injection. The queue will continue to fill
  *    as long as idle() or manage_inactivity() are being called.
  */
+
+//ISR(SPI_STC_vect) // SPI interrupt routine 
+
+void SPI3_IRQHandler(void)
+{ 
+    //HAL_SPI_IRQHandler(&SpiHandle);
+   //byte c = SPDR; // read byte from SPI Data Register
+   //LL_SPI_Disable(SPI3); 
+   //SPI3->CR1	|= 3<<8;  //NSS is ignored and Slave disabled.
+   //SPI3->CR1	&= ~(1<<8);	//SSI->0, slave.
+   SERIAL_ECHO("SPI3_IRQHandler");
+   SERIAL_ECHO("\r\n");
+    /*
+   byte c = SPI3->DR;
+     
+   if (indx < sizeof buff) {
+      buff [indx++] = c; // save data in the next index in the array buff
+      //if (c == '\r') //check for the end of the word
+      if (c == '\n') //check for the end of the word
+      process = true;
+   }
+   */
+   //HAL_SPI_IRQHandler(&SpiHandle);
+   //SPI3->CR1	&= ~(1<<8);	//SSI->0, slave.
+}
+
+/*
+void SPIx_IRQHandler(void)
+{
+  HAL_SPI_IRQHandler(&SpiHandle);
+  SERIAL_ECHO("SPI3_IRQHandler");
+  SERIAL_ECHO("\r\n");
+}
+*/
+
+//void HAL_SPI_MspInitTEST(SPI_HandleTypeDef *hspi)
+void HAL_SPI_MspInitTEST(void)
+{
+  GPIO_InitTypeDef  GPIO_InitStruct;
+  
+  /*##-1- Enable peripherals and GPIO Clocks #################################*/
+  /* Enable GPIO TX/RX clock */
+  SPIx_SCK_GPIO_CLK_ENABLE();
+  SPIx_MISO_GPIO_CLK_ENABLE();
+  SPIx_MOSI_GPIO_CLK_ENABLE();
+  /* Enable SPI clock */
+  SPIx_CLK_ENABLE(); 
+  
+  /*##-2- Configure peripheral GPIO ##########################################*/  
+  /* SPI SCK GPIO pin configuration  */
+  GPIO_InitStruct.Pin       = SPIx_SCK_PIN;
+  GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+  GPIO_InitStruct.Pull      = GPIO_PULLUP;
+  GPIO_InitStruct.Speed     = GPIO_SPEED_FAST;
+  GPIO_InitStruct.Alternate = SPIx_SCK_AF;
+  HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
+    
+  /* SPI MISO GPIO pin configuration  */
+  GPIO_InitStruct.Pin = SPIx_MISO_PIN;
+  GPIO_InitStruct.Alternate = SPIx_MISO_AF;
+  //Addition
+  //GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+  //GPIO_InitStruct.Pull      = GPIO_PULLUP;
+  HAL_GPIO_Init(SPIx_MISO_GPIO_PORT, &GPIO_InitStruct);
+  
+  /* SPI MOSI GPIO pin configuration  */
+  GPIO_InitStruct.Pin = SPIx_MOSI_PIN;
+  GPIO_InitStruct.Alternate = SPIx_MOSI_AF;
+  //Addition
+  //GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
+  //GPIO_InitStruct.Pull      = GPIO_PULLUP;
+  HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
+
+  /*##-3- Configure the NVIC for SPI #########################################*/
+  /* NVIC for SPI */
+  //HAL_NVIC_SetPriority(SPIx_IRQn, 0, 1);
+  //HAL_NVIC_EnableIRQ(SPIx_IRQn);
+}
+
+void usb_ls(void);
+
+//Elsan for C files.
+extern "C" void prnt_els(char * str);
+void prnt_els(char * str) {
+  SERIAL_ECHO(str);
+  SERIAL_ECHO("\r\n");
+}
+
+//Elsan for C++ files.
+void prnt_els2(char * str) {
+  SERIAL_ECHO(str);
+  SERIAL_ECHO("\r\n");
+}
+
+UART_HandleTypeDef /*huart6*/huart3;
+static void MX_USART6_UART_Init(void) //Actually for USART3
+{
+  /* USER CODE BEGIN USART6_Init 0 */
+
+  /* USER CODE END USART6_Init 0 */
+
+  /* USER CODE BEGIN USART6_Init 1 */
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  __HAL_RCC_USART3_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF7_USART3;
+    HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+  /* USER CODE END USART6_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 115200;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART6_Init 2 */
+
+  /* USER CODE END USART6_Init 2 */
+
+}
+
+//static void MX_GPIO_Init(void)
+//{
+  /* GPIO Ports Clock Enable */
+  //__HAL_RCC_GPIOC_CLK_ENABLE();
+//}
+
+static void MX_GPIO_Init(void)
+{ //Elsan this part can be put in init functions of main.
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+}
+
+
 void loop() {
+  unsigned char input[100];
+  uint32_t byteswritten;
   do {
+
     idle();
 
     #if ENABLED(SDSUPPORT)
-      card.checkautostart();
-      if (card.flag.abort_sd_printing) abortSDPrinting();
-      if (marlin_state == MF_SD_COMPLETE) finishSDPrinting();
+      //card.checkautostart();  //Elsan dis
+      if (card.flag.abort_sd_printing) {abortSDPrinting(); card.flag.abort_sd_printing=false;} //Elsan change
+      if (marlin_state == MF_SD_COMPLETE) finishSDPrinting(); 
     #endif
 
     queue.advance();
@@ -1323,4 +1788,128 @@ void loop() {
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
 
   } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
+  
+  //Serial6.println("Hello Serial 6");
+  /*
+   if (process) {
+      process = false; //reset the process
+      Serial.println (buff); //print the array on serial monitor
+      SERIAL_ECHO(buff);
+      SERIAL_ECHO("\r\n");
+      indx= 0; //reset button to zero
+   }
+   */
+   //HAL_SPI_TransmitReceive_IT(&SpiHandle, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, 5);
+   //HAL_SPI_TransmitReceive(&SpiHandle, (uint8_t*)aTxBuffer, (uint8_t *)aRxBuffer, /*BUFFERSIZE*/5, /*5000*/10);
+   //SPI3->CR1	&= ~(1<<8);	//SSI->0, slave. 
+   //byte c = SPI3->DR;
+   //strcpy(buff,(char*)c);
+   //SERIAL_ECHO(buff);
+   //SERIAL_ECHO("\r\n");
+   //SPI3->CR1	|= 3<<8;  //NSS is ignored and Slave disabled.
+   //while (HAL_SPI_GetState(&spi) != HAL_SPI_STATE_READY) { }
+
+  //Elsan Temporarily disabled.
+  //Wait until print file is closed.
+  if(!isUSB_fileopen) {print_stat=0;}
+
+  if(!isUSB_fileopen) {  //Elsan allow SPI when not printing and one file operation at a time.            
+  again2: 
+    if(start==1) goto again;  //V3
+    //Start
+    output[0]=82;//Ready message to ESP3D. Only for first start message!!!
+    if(HAL_SPI_TransmitReceive(&spi, (uint8_t *)&output[0], (uint8_t*)&input[0], 1, 40)!=HAL_OK) {//send Ready message. timeou 1 bad.
+      input[0]=0;
+      if(start) while(HAL_SPI_TransmitReceive(&spi, (uint8_t *)&output[0], (uint8_t*)&input[0], 1, 100)!=HAL_OK);//Wait untill message is sent.
+      else goto jmp;      
+    }
+    
+    if(input[0]==0xEE) {
+      //if(!start) {usb_file_open_wr();}
+      //SERIAL_ECHOPGM("file opened");
+      ASCIcnt=0;
+      start=1;
+      output[0]=0;
+      goto again;
+    }
+        
+    //Receive 1byte and stop
+    output[0]=0;    
+  again: 
+    do {SPI3_Transfer((uint8_t *)&output[0], (uint8_t *)&input[0], 1); output[0]=input[0];} while(input[0]==0x00); 
+    
+    if(bufInvASCI==0) write_perm=1;//first pass, allow.
+    else if((bufInvASCI>127)&&(input[0]<128)) write_perm=1;//Previous data is Inv, current one should be ASCII. 
+    else if((bufInvASCI<128)&&(input[0]>127)) write_perm=1;//Previous data is ASCI, current one should be InvASCII. 
+    else write_perm=0;  
+    bufInvASCI=input[0];
+      
+    bufASCI=input[0];  //V3 data is received.
+            
+    if(input[0]==0xFF) {
+      f_close(&MyFile);
+      //SERIAL_ECHOLNPGM("closed");SERIAL_ECHO("\r");
+      start=0;
+      say=0;
+      ftp_name_wr=1;
+      fname_cnt=0;
+      goto jmp;
+    }
+                
+again5: 
+    //do {SPI3_Transfer((uint8_t *)&output[0], (uint8_t *)&input[0], 1); output[0]=input[0];} while(input[0]!=0x00);
+    if(bufASCI>127) bufASCI=~bufASCI;  //Convert to ASCII.
+    if(write_perm) {
+      if(ftp_name_wr==1){
+        fname_ftp[fname_cnt]=bufASCI;
+        if(bufASCI==36) { //"$"
+          ftp_name_wr=0;
+          fname_ftp[fname_cnt]=0; //Exclude "$"
+          strcpy(fname2,fname_ftp);
+          usb_file_open_wr();
+        }
+        fname_cnt++;
+      }
+      else {
+        f_write(&MyFile, &bufASCI, 1, (UINT*)&byteswritten);
+      }
+    }
+    say++;
+    
+jmp:     
+    //Duty cycle: give more time to SPI.
+    //HAL_watchdog_refresh(); //No load.
+    if((say!=1024000)&&(start)) {
+      goto again;
+    } 
+    else say=0;
+  }  
+  //Temporarily disabled.
+
+  //LwIP Webserver
+  // Read a received packet from the Ethernet buffers and send it to the lwIP for handling
+  ethernetif_input(&gnetif);
+  // Handle timeouts
+  sys_check_timeouts();
+
+  //uint8_t str[] = "1A Hello\r\n";
+  //HAL_UART_Transmit(&huart3,str,sizeof(str),1000);
+    
+  x_pos=current_position.x;
+  y_pos=current_position.y;
+  z_pos=current_position.z;
 }
+
+
+inline void SPI3_Transfer(uint8_t *outp, uint8_t *inp, int count) {
+    while(count--) {
+        while(!(SPI3->SR & SPI_SR_TXE))
+            ;
+        *(volatile uint8_t *)&SPI3->DR = *outp++;
+        while(!(SPI3->SR & SPI_SR_RXNE))
+            ;
+        *inp++ = *(volatile uint8_t *)&SPI3->DR;
+    }
+}
+
+

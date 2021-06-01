@@ -493,8 +493,8 @@ void GCodeQueue::get_serial_commands() {
         }
         #if ENABLED(SDSUPPORT)
           // Pronterface "M29" and "M29 " has no line number
-          else if (card.flag.saving && !is_M29(command))
-            return gcode_line_error(PSTR(STR_ERR_NO_CHECKSUM), i);
+          //else if (card.flag.saving && !is_M29(command))            //Elsan dis
+            //return gcode_line_error(PSTR(STR_ERR_NO_CHECKSUM), i);  //Elsan dis
         #endif
 
         //
@@ -582,6 +582,7 @@ void GCodeQueue::get_serial_commands() {
         }
 
         if (card_eof) card.fileHasFinished();         // Handle end of file reached
+        
       }
       else
         process_stream_char(sd_char, sd_input_state, command_buffer[index_w], sd_count);

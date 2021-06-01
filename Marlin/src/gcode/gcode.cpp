@@ -419,10 +419,12 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       case 17: M17(); break;                                      // M17: Enable all stepper motors
 
+      //case 20: M20(); break;                                    // M20: List SD card Elsan
+
       #if ENABLED(SDSUPPORT)
         case 20: M20(); break;                                    // M20: List SD card
-        case 21: M21(); break;                                    // M21: Init SD card
-        case 22: M22(); break;                                    // M22: Release SD card
+        //case 21: M21(); break;                                    // M21: Init SD card
+        //case 22: M22(); break;                                    // M22: Release SD card
         case 23: M23(); break;                                    // M23: Select file
         case 24: M24(); break;                                    // M24: Start SD print
         case 25: M25(); break;                                    // M25: Pause SD print
@@ -431,7 +433,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
         case 28: M28(); break;                                    // M28: Start SD write
         case 29: M29(); break;                                    // M29: Stop SD write
         case 30: M30(); break;                                    // M30 <filename> Delete File
-        case 32: M32(); break;                                    // M32: Select file and start SD print
+        //case 32: M32(); break;                                    // M32: Select file and start SD print
 
         #if ENABLED(LONG_FILENAME_HOST_SUPPORT)
           case 33: M33(); break;                                  // M33: Get the long full path to a file or folder
@@ -443,7 +445,7 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
         case 928: M928(); break;                                  // M928: Start SD write
       #endif // SDSUPPORT
-
+      
       case 31: M31(); break;                                      // M31: Report time since the start of SD print or last M109
 
       #if ENABLED(DIRECT_PIN_CONTROL)

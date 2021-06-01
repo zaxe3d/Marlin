@@ -171,6 +171,7 @@ namespace ExtUI {
   void setTargetFan_percent(const float, const fan_t);
   void setAxisPosition_mm(const float, const axis_t, const feedRate_t=0);
   void setAxisPosition_mm(const float, const extruder_t, const feedRate_t=0);
+  void setCurrentExtruderPosition_mm(const float position);
   void setAxisSteps_per_mm(const float, const axis_t);
   void setAxisSteps_per_mm(const float, const extruder_t);
   void setAxisMaxFeedrate_mm_s(const feedRate_t, const axis_t);
@@ -220,6 +221,9 @@ namespace ExtUI {
 
   float getZOffset_mm();
   void setZOffset_mm(const float);
+
+  float getMaterialCustomExtTemp(); //Elsan
+  float getMaterialCustomBedTemp(); //Elsan
 
   #if HAS_BED_PROBE
     float getProbeOffset_mm(const axis_t);
@@ -359,6 +363,7 @@ namespace ExtUI {
   #if HAS_PID_HEATING
     void onPidTuning(const result_t rst);
   #endif
+  void onFileHasFinished();
 };
 
 /**

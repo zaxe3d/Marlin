@@ -14,41 +14,24 @@
         "0x3748"
       ]
     ],
-    "mcu": "stm32f407vet6",
+    "mcu": "stm32f407vgt6",
     "variant": "MARLIN_F407VE"
   },
   "debug": {
-    "jlink_device": "STM32F407VE",
+    "jlink_device": "STM32F407VG",
     "openocd_target": "stm32f4x",
-    "svd_path": "STM32F40x.svd",
-    "tools": {
-      "stlink": {
-        "server": {
-          "arguments": [
-            "-f",
-            "scripts/interface/stlink.cfg",
-            "-c",
-            "transport select hla_swd",
-            "-f",
-            "scripts/target/stm32f4x.cfg",
-            "-c",
-            "reset_config none"
-          ],
-          "executable": "bin/openocd",
-          "package": "tool-openocd"
-        }
-      }
-    }
+    "svd_path": "STM32F40x.svd"
+    
   },
   "frameworks": [
     "arduino",
     "stm32cube"
   ],
-  "name": "STM32F407VE (192k RAM. 512k Flash)",
+  "name": "STM32F407VG (192k RAM. 1024k Flash)",
   "upload": {
     "disable_flushing": false,
     "maximum_ram_size": 131072,
-    "maximum_size": 514288,
+    "maximum_size": 1048576,
     "protocol": "stlink",
     "protocols": [
       "stlink",
@@ -59,6 +42,6 @@
     "use_1200bps_touch": false,
     "wait_for_upload_port": false
   },
-  "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32f407ve.html",
+  "url": "https://www.st.com/en/microcontrollers-microprocessors/stm32f407vg.html",
   "vendor": "Generic"
 }

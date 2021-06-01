@@ -58,12 +58,27 @@ public:
     // Hook for manual move option
     static void HandleManualMoveOption(DGUS_VP_Variable &var, void *val_ptr);
   #endif
+
+  //Elsan
+  //#if ENABLED(FIRST_LAYER_CALIBRATION)
+    // Hook for first layer calibration option
+    static void HandleFirstLayerCalibrationOption(DGUS_VP_Variable &var, void *val_ptr);
+    // Hook for first layer calibration
+    static void HandleFirstLayerCalibration(DGUS_VP_Variable &var);
+  //#endif
+
+  static void HandleGoToCalibrationPoints(DGUS_VP_Variable &var, void *val_ptr);
+  static void HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val_ptr);
+  static void HandleFanOnOff(DGUS_VP_Variable &var, void *val_ptr);
+  ///////////////////////////////////////////////////////////////////
+
   // Hook for manual move.
   static void HandleManualMove(DGUS_VP_Variable &var, void *val_ptr);
   // Hook for manual extrude.
   static void HandleManualExtrude(DGUS_VP_Variable &var, void *val_ptr);
   // Hook for motor lock and unlook
   static void HandleMotorLockUnlock(DGUS_VP_Variable &var, void *val_ptr);
+  static void HandleEndPreheat(DGUS_VP_Variable &var, void *val_ptr);
   #if ENABLED(POWER_LOSS_RECOVERY)
     // Hook for power loss recovery.
     static void HandlePowerLossRecovery(DGUS_VP_Variable &var, void *val_ptr);
@@ -101,11 +116,16 @@ public:
     static void HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr);
     // Hook for filament load and unload
     static void HandleFilamentLoadUnload(DGUS_VP_Variable &var);
+    static void HandleSDFilamentOption(DGUS_VP_Variable &var, void *val_ptr);
+    static void HandleSDFilamentLoadUnload(DGUS_VP_Variable &var);
   #endif
 
-  #if ENABLED(SDSUPPORT)
+  //#if ENABLED(SDSUPPORT)
     // Callback for VP "Display wants to change screen when there is a SD card"
     static void ScreenChangeHookIfSD(DGUS_VP_Variable &var, void *val_ptr);
+
+    static void DGUSLCD_SD_RefreshFilelist(DGUS_VP_Variable& var, void *val_ptr); //Elsan
+    
     /// Scroll buttons on the file listing screen.
     static void DGUSLCD_SD_ScrollFilelist(DGUS_VP_Variable &var, void *val_ptr);
     /// File touched.
@@ -126,7 +146,7 @@ public:
     static void SDCardRemoved();
     /// Marlin informed us about a bad SD Card.
     static void SDCardError();
-  #endif
+  //#endif
 
   // OK Button the Confirm screen.
   static void ScreenConfirmedOK(DGUS_VP_Variable &var, void *val_ptr);
@@ -151,6 +171,7 @@ public:
   static void DGUSLCD_SendTemperaturePID(DGUS_VP_Variable &var);
   static void DGUSLCD_SendPercentageToDisplay(DGUS_VP_Variable &var);
   static void DGUSLCD_SendPrintProgressToDisplay(DGUS_VP_Variable &var);
+  static void DGUSLCD_SendPrintProgressBarToDisplay(DGUS_VP_Variable &var);
   static void DGUSLCD_SendPrintTimeToDisplay(DGUS_VP_Variable &var);
   #if ENABLED(PRINTCOUNTER)
     static void DGUSLCD_SendPrintAccTimeToDisplay(DGUS_VP_Variable &var);
@@ -192,6 +213,7 @@ public:
   /// Display will get a 2-byte integer scaled to the number of digits:
   /// Tell the display the number of digits and it cheats by displaying a dot between...
   template<unsigned int decimals>
+  /*
   static void DGUSLCD_SendFloatAsIntValueToDisplay(DGUS_VP_Variable &var) {
     if (var.memadr) {
       float f = *(float *)var.memadr;
@@ -200,6 +222,23 @@ public:
       dgusdisplay.WriteVariable(var.VP, (int16_t)f);
     }
   }
+  */
+  //Elsan old ver
+  static void DGUSLCD_SendFloatAsIntValueToDisplay(DGUS_VP_Variable &var) {
+    if (var.memadr) {
+      float f = *(float *)var.memadr;
+      DEBUG_ECHOLNPAIR_F(" >> ", f, 6);
+      f *= cpow(10, decimals);
+      union { int16_t i; char lb[2]; } endian;
+
+      char tmp[2];
+      endian.i = f;
+      tmp[0] = endian.lb[1];
+      tmp[1] = endian.lb[0];
+      dgusdisplay.WriteVariable(var.VP, tmp, 2);
+    }
+  }
+  ////////////////////////////////////////////////////////////////////
 
   /// Force an update of all VP on the current screen.
   static inline void ForceCompleteUpdate() { update_ptr = 0; ScreenComplete = false; }

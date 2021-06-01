@@ -521,6 +521,8 @@ private:
 
   static void M18_M84();
 
+  //static void M20();  //Elsan
+
   #if ENABLED(SDSUPPORT)
     static void M20();
     static void M21();

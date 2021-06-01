@@ -22,6 +22,16 @@
 
 #include "../inc/MarlinConfig.h"
 
+void prnt_els2(char * str);
+void usb_file_open(void);
+char fname2[/*20*/100];
+#include "../FATFS/App/fatfs.h"
+extern FIL MyFile;                   /* File object */
+void usb_file_open_wr(void);
+void usb_file_del(void);
+char isUSB_fileopen=0;
+int print_stat=0;
+
 #if ENABLED(SDSUPPORT)
 
 //#define DEBUG_CARDREADER
@@ -49,6 +59,11 @@
   #include "../feature/powerloss.h"
 #endif
 
+//Elsan
+#if ENABLED(EXTENSIBLE_UI)
+  #include "../lcd/extui/ui_api.h"
+#endif
+
 #if ENABLED(ADVANCED_PAUSE_FEATURE)
   #include "../feature/pause.h"
 #endif
@@ -60,7 +75,7 @@
 // public:
 
 card_flags_t CardReader::flag;
-char CardReader::filename[FILENAME_LENGTH], CardReader::longFilename[LONG_FILENAME_LENGTH];
+char CardReader::filename[/*FILENAME_LENGTH*/LONG_FILENAME_LENGTH], CardReader::longFilename[LONG_FILENAME_LENGTH];
 int8_t CardReader::autostart_index;
 
 #if BOTH(HAS_MULTI_SERIAL, BINARY_FILE_TRANSFER)
@@ -353,10 +368,14 @@ void CardReader::ls() {
 // Echo the DOS 8.3 filename (and long filename, if any)
 //
 void CardReader::printFilename() {
-  if (file.isOpen()) {
-    char dosFilename[FILENAME_LENGTH];
-    file.getDosName(dosFilename);
-    SERIAL_ECHO(dosFilename);
+  //if (file.isOpen()) {  //Elsan dis
+  if (isUSB_fileopen) {  //Elsan
+    //prnt_els2("file.isOpen ok");
+    //char dosFilename[FILENAME_LENGTH];  //Elsan change.
+    char dosFilename[100];  //Elsan
+    //file.getDosName(dosFilename);   //Elsan dis
+    strcpy(dosFilename,longFilename);    //Elsan
+    SERIAL_ECHO(dosFilename);   //Elsan actually this is for short 8.3 filename and below for longfilename.
     #if ENABLED(LONG_FILENAME_HOST_SUPPORT)
       selectFileByName(dosFilename);
       if (longFilename[0]) {
@@ -469,7 +488,7 @@ void CardReader::openAndPrintFile(const char *name) {
 }
 
 void CardReader::startFileprint() {
-  if (isMounted()) {
+  if (/*isMounted()*/1) {  //Elsan
     flag.sdprinting = true;
     TERN_(SD_RESORT, flush_presort());
   }
@@ -479,8 +498,9 @@ void CardReader::endFilePrint(TERN_(SD_RESORT, const bool re_sort/*=false*/)) {
   TERN_(ADVANCED_PAUSE_FEATURE, did_pause_print = 0);
   TERN_(DWIN_CREALITY_LCD, HMI_flag.print_finish = flag.sdprinting);
   flag.sdprinting = flag.abort_sd_printing = false;
-  if (isFileOpen()) file.close();
-  TERN_(SD_RESORT, if (re_sort) presort());
+  if (/*isFileOpen()*/1) file.close();  //Elsan change.
+  
+  //TERN_(SD_RESORT, if (re_sort) presort()); //Elsan dis 
 }
 
 void CardReader::openLogFile(char * const path) {
@@ -535,16 +555,21 @@ void announceOpen(const uint8_t doing, const char * const path) {
 //   - 2 : Resuming from a sub-procedure
 //
 void CardReader::openFileRead(char * const path, const uint8_t subcall_type/*=0*/) {
-  if (!isMounted()) return;
+  //prnt_els2("openFileRead0");
+  flag.mounted=1; //Elsan
+  if (!isMounted()) return; 
+
+  //prnt_els2("openFileRead1");
 
   switch (subcall_type) {
     case 0:      // Starting a new print. "Now fresh file: ..."
+      //prnt_els2("openFileRead case 0");
       announceOpen(2, path);
       file_subcall_ctr = 0;
       break;
 
     case 1:      // Starting a sub-procedure
-
+      //prnt_els2("openFileRead case 1");
       // With no file is open it's a simple macro. "Now doing file: ..."
       if (!isFileOpen()) { announceOpen(1, path); break; }
 
@@ -566,19 +591,35 @@ void CardReader::openFileRead(char * const path, const uint8_t subcall_type/*=0*
       break;
 
     case 2:      // Resuming previous file after sub-procedure
+    //prnt_els2("openFileRead case 2");
       SERIAL_ECHO_MSG("END SUBROUTINE");
       break;
   }
 
   endFilePrint();
 
-  SdFile *diveDir;
-  const char * const fname = diveToFile(true, diveDir, path);
-  if (!fname) return;
+  //prnt_els2("openFileRead");
 
-  if (file.open(diveDir, fname, O_READ)) {
+  SdFile *diveDir;
+  //const char * const fname = diveToFile(true, diveDir, path); //Elsan dis
+  const char * const fname = path;  //Elsan shortcut solution for file name.
+  if (!fname) return; 
+  
+  //prnt_els2("openFileRead2");
+  //prnt_els2((char*)fname);
+
+  //if (file.open(diveDir, fname, O_READ)) {  //Elsan dis
+    //strcpy(fname2,"3DB.GCO"); //Elsan ok
+    strcpy(fname2,fname); //Elsan must be before f_open in usb_file_open(). It could have been carried by filename also.
+    usb_file_open();  //Elsan
+    isUSB_fileopen=1; //Elsan
+        
     filesize = file.fileSize();
+    //filesize=3080796;  //Elsan for testing.
+    filesize = f_size(&MyFile);
+        
     sdpos = 0;
+    //sdpos2 = 0; //Test worked but a small correction from Marlin 2.0.8.1 applied to get().
 
     PORT_REDIRECT(SERIAL_BOTH);
     SERIAL_ECHOLNPAIR(STR_SD_FILE_OPENED, fname, STR_SD_SIZE, filesize);
@@ -586,10 +627,18 @@ void CardReader::openFileRead(char * const path, const uint8_t subcall_type/*=0*
     PORT_RESTORE();
 
     selectFileByName(fname);
+    //prnt_els2("selectFileByName finish");
+
+    //strcpy(filename,"3DB.GCO"); //Elsan
+    strcpy(filename,fname); //Elsan longfilenames does not fit into filename.
+    
+    //strcpy(longFilename,"3DB.GCO"); //Elsan
+    strcpy(longFilename,fname); //Elsan
+    
     ui.set_status(longFilename[0] ? longFilename : fname);
-  }
-  else
-    openFailed(fname);
+  //} //Elsan dis
+  //else //Elsan dis
+    //openFailed(fname);  //Elsan dis
 }
 
 inline void echo_write_to_file(const char * const fname) {
@@ -600,6 +649,8 @@ inline void echo_write_to_file(const char * const fname) {
 // Open a file by DOS path for write
 //
 void CardReader::openFileWrite(char * const path) {
+
+  flag.mounted=1; //Elsan
   if (!isMounted()) return;
 
   announceOpen(2, path);
@@ -614,15 +665,20 @@ void CardReader::openFileWrite(char * const path) {
   #if ENABLED(SDCARD_READONLY)
     openFailed(fname);
   #else
-    if (file.open(diveDir, fname, O_CREAT | O_APPEND | O_WRITE | O_TRUNC)) {
+    //if (file.open(diveDir, fname, O_CREAT | O_APPEND | O_WRITE | O_TRUNC)) {
+    strcpy(fname2,fname); //Elsan must be before f_open in usb_file_open(). It could have been carried by filename also.
+    usb_file_open_wr();  //Elsan
+
       flag.saving = true;
       selectFileByName(fname);
+      strcpy(filename,fname); //Elsan
+      
       TERN_(EMERGENCY_PARSER, emergency_parser.disable());
       echo_write_to_file(fname);
       ui.set_status(fname);
-    }
-    else
-      openFailed(fname);
+    //} //Elsan dis
+    //else  //Elsan dis
+      //openFailed(fname);  //Elsan dis
   #endif
 }
 
@@ -646,12 +702,21 @@ bool CardReader::fileExists(const char * const path) {
 // Delete a file by name in the working directory
 //
 void CardReader::removeFile(const char * const name) {
-  if (!isMounted()) return;
+  if (/*!isMounted()*/0) return;  //Elsan bypass here.
 
   //endFilePrint();
 
   SdFile *curDir;
   const char * const fname = diveToFile(false, curDir, name);
+
+  //Elsan
+  strcpy(fname2,fname); //Elsan must be before f_open in usb_file_open(). It could have been carried by filename also.
+  usb_file_del();  //Elsan
+  SERIAL_ECHOLNPAIR("File deleted:", fname);
+  sdpos = 0;
+  return;
+  /////////////////////////////
+
   if (!fname) return;
 
   #if ENABLED(SDCARD_READONLY)
@@ -668,14 +733,28 @@ void CardReader::removeFile(const char * const name) {
 }
 
 void CardReader::report_status() {
-  if (isPrinting()) {
+  if (isPrinting()) {  
+    //SERIAL_ECHOPAIR(STR_SD_PRINTING_BYTE, sdpos);
     SERIAL_ECHOPGM(STR_SD_PRINTING_BYTE);
     SERIAL_ECHO(sdpos);
     SERIAL_CHAR('/');
     SERIAL_ECHOLN(filesize);
+    //prnt_els2("report_status isPrinting: ok");
+    print_stat=1;
   }
-  else
-    SERIAL_ECHOLNPGM(STR_SD_NOT_PRINTING);
+  //else
+  else if(isPaused())   //Elsan
+    {
+    //SERIAL_ECHOLNPGM(STR_SD_NOT_PRINTING);
+    SERIAL_ECHOLNPGM("SD Printing Paused");
+    print_stat=2;
+    }
+  else   //Elsan
+    {
+    //SERIAL_ECHOLNPGM("SD Printing Paused");
+    SERIAL_ECHOLNPGM(STR_SD_NOT_PRINTING);  
+    print_stat=0;  
+    }  
 }
 
 void CardReader::write_command(char * const buf) {
@@ -1168,6 +1247,9 @@ void CardReader::fileHasFinished() {
     endFilePrint(TERN_(SD_RESORT, true));
 
     marlin_state = MF_SD_COMPLETE;
+    #if ENABLED(EXTENSIBLE_UI)
+      ExtUI::onFileHasFinished();
+    #endif
   }
 }
 

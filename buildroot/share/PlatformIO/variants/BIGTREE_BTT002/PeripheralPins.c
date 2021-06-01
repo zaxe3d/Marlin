@@ -201,7 +201,7 @@ const PinMap PinMap_PWM[] = {
 #endif
 
 //*** SERIAL ***
-
+#define HAL_UART_MODULE_ENABLED
 #ifdef HAL_UART_MODULE_ENABLED
 const PinMap PinMap_UART_TX[] = {
   {PA_0,  UART4,   STM_PIN_DATA(STM_MODE_AF_PP, GPIO_PULLUP, GPIO_AF8_UART4)},
@@ -312,6 +312,7 @@ const PinMap PinMap_SPI_SSEL[] = {
 //*** No QUADSPI ***
 
 //*** USB ***
+#define HAL_PCD_MODULE_ENABLED
 #ifdef HAL_PCD_MODULE_ENABLED
 const PinMap PinMap_USB_OTG_FS[] = {
   //{PA_8,  USB_OTG_FS, STM_PIN_DATA(STM_MODE_AF_PP, GPIO_PULLUP, GPIO_AF10_OTG_FS)}, // USB_OTG_FS_SOF   used by LCD

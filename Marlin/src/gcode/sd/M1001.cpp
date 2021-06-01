@@ -72,7 +72,7 @@ void GcodeSuite::M1001() {
   TERN_(LCD_SET_PROGRESS_MANUALLY, ui.set_progress_done());
 
   // Purge the recovery file
-  TERN_(POWER_LOSS_RECOVERY, recovery.purge());
+  //TERN_(POWER_LOSS_RECOVERY, recovery.purge()); //Elsan dis temporarily.
 
   // Announce SD file completion
   {
@@ -93,11 +93,11 @@ void GcodeSuite::M1001() {
 
   // Inject SD_FINISHED_RELEASECOMMAND, if any
   #ifdef SD_FINISHED_RELEASECOMMAND
-    queue.inject_P(PSTR(SD_FINISHED_RELEASECOMMAND));
+    //queue.inject_P(PSTR(SD_FINISHED_RELEASECOMMAND)); //Elsan dis
   #endif
 
   // Re-select the last printed file in the UI
-  TERN_(SD_REPRINT_LAST_SELECTED_FILE, ui.reselect_last_file());
+  //TERN_(SD_REPRINT_LAST_SELECTED_FILE, ui.reselect_last_file()); //Elsan dis
 }
 
 #endif // SDSUPPORT

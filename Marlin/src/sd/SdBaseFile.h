@@ -38,6 +38,8 @@
 
 #include <stdint.h>
 
+extern /*FSIZE_t*//*DWORD*/unsigned long position;  //Elsan
+
 /**
  * \struct filepos_t
  * \brief internal type for istream
@@ -202,7 +204,7 @@ class SdBaseFile {
   /**
    * \return The current position for a file or directory.
    */
-  uint32_t curPosition() const { return curPosition_; }
+  uint32_t curPosition() const { return curPosition_/*position*/; } //Elsan if necessary transfer from position to curPosition_.
 
   /**
    * \return Current working directory

@@ -43,6 +43,26 @@
 
 #include "../../inc/MarlinConfigPre.h"
 
+//Elsan
+class Material {  
+public:
+    
+    typedef struct  {
+      float ext;
+      float bed;
+    } custom_temp_t;
+
+    // material type 0:PLA 1:ABS 2:PETG 3:FLEX 7:CUSTOM
+    static uint8_t type;
+
+    // hold custom material temp details here.
+    /*static*/ custom_temp_t custom_temp;
+   
+};
+Material material;
+//#include "../../module/material.h"
+////////////////////////////////
+
 #if ENABLED(EXTENSIBLE_UI)
 
 #include "../ultralcd.h"
@@ -99,6 +119,8 @@
 #if ENABLED(HOST_PROMPT_SUPPORT)
   #include "../../feature/host_actions.h"
 #endif
+
+
 
 namespace ExtUI {
   static struct {
@@ -184,6 +206,17 @@ namespace ExtUI {
       UNUSED(heater);
     #endif
   }
+
+  //Elsan
+  
+  float getMaterialCustomExtTemp() {
+    return _MAX(material.custom_temp.ext, 180);    
+  }
+
+  float getMaterialCustomBedTemp() {
+    return _MAX(material.custom_temp.bed, 50);
+  }
+  //////////////////////////////////////////
 
   #if ENABLED(JOYSTICK)
     /**
@@ -327,6 +360,12 @@ namespace ExtUI {
 
     current_position.e = position;
     line_to_current_position(feedrate ?: manual_feedrate_mm_s.e);
+  }
+
+  //Elsan
+  void setCurrentExtruderPosition_mm(const float position) {
+    current_position.e = position;
+    sync_plan_position_e();
   }
 
   void setActiveTool(const extruder_t extruder, bool no_move) {

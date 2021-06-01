@@ -43,6 +43,12 @@
 
 #include "../../MarlinCore.h" // for startOrResumeJob
 
+#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
+#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
+extern DGUSScreenHandler ScreenHandler; //Elsan
+extern char fname2[100];  //Elsan
+extern int print_stat;
+
 /**
  * M24: Start or Resume SD Print
  */
@@ -60,7 +66,7 @@ void GcodeSuite::M24() {
     }
   #endif
 
-  if (card.isFileOpen()) {
+  if (/*card.isFileOpen()*/1) {  //Elsan
     card.startFileprint();            // SD card will now be read for commands
     startOrResumeJob();               // Start (or resume) the print job timer
     TERN_(POWER_LOSS_RECOVERY, recovery.prepare());
@@ -74,6 +80,11 @@ void GcodeSuite::M24() {
   #endif
 
   ui.reset_status();
+
+  dgusdisplay.WriteVariable(VP_SD_Print_Filename, /*buf_main[touched_nr+file_cnt3]*/fname2, VP_SD_FileName_LEN, true);  //Elsan
+  ScreenHandler.GotoScreen(DGUSLCD_SCREEN_SDPRINTMANIPULATION); //Elsan update DGUS for Print is started from XDesktop or other terminal. 
+  if(print_stat==2) print_stat=1; //Elsan resume.
+  else print_stat=1;
 }
 
 /**
@@ -91,6 +102,8 @@ void GcodeSuite::M25() {
     #if ENABLED(SDSUPPORT)
       if (IS_SD_PRINTING()) card.pauseSDPrint();
     #endif
+
+    print_stat=2; //Elsan
 
     #if ENABLED(POWER_LOSS_RECOVERY)
       if (recovery.enabled) recovery.save(true);

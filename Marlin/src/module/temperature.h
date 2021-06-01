@@ -40,6 +40,9 @@
 #define HOTEND_INDEX TERN(HAS_MULTI_HOTEND, e, 0)
 #define E_NAME TERN_(HAS_MULTI_HOTEND, e)
 
+extern int Bed_temp;
+extern int Extr_temp;
+
 // Heater identifiers. Positive values are hotends. Negative values are other heaters.
 typedef enum : int8_t {
   INDEX_NONE = -5,
@@ -566,6 +569,7 @@ class Temperature {
     //deg=degreeCelsius
 
     FORCE_INLINE static float degHotend(const uint8_t E_NAME) {
+      Extr_temp=temp_hotend[HOTEND_INDEX].celsius;  //Elsan
       return TERN0(HAS_HOTEND, temp_hotend[HOTEND_INDEX].celsius);
     }
 
@@ -631,7 +635,7 @@ class Temperature {
       #if ENABLED(SHOW_TEMP_ADC_VALUES)
         FORCE_INLINE static int16_t rawBedTemp()  { return temp_bed.raw; }
       #endif
-      FORCE_INLINE static float degBed()          { return temp_bed.celsius; }
+      FORCE_INLINE static float degBed()          { Bed_temp=temp_bed.celsius; /*Elsan*/return temp_bed.celsius; }
       FORCE_INLINE static int16_t degTargetBed()  { return temp_bed.target; }
       FORCE_INLINE static bool isHeatingBed()     { return temp_bed.target > temp_bed.celsius; }
       FORCE_INLINE static bool isCoolingBed()     { return temp_bed.target < temp_bed.celsius; }

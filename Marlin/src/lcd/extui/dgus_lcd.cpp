@@ -35,6 +35,11 @@
 #include "lib/dgus/DGUSDisplayDef.h"
 #include "lib/dgus/DGUSScreenHandler.h"
 
+#if HAS_FILAMENT_SENSOR
+  #include "../../module/motion.h"
+  #include "../../feature/runout.h"
+#endif
+
 extern const char NUL_STR[];
 
 namespace ExtUI {
@@ -58,7 +63,15 @@ namespace ExtUI {
 
   void onPlayTone(const uint16_t frequency, const uint16_t duration) {}
   void onPrintTimerStarted() {}
-  void onPrintTimerPaused() {}
+  void onPrintTimerPaused() {
+    if (runout.filament_ran_out) {
+      ScreenHandler.GotoScreen(DGUSLCD_SCREEN_SD_FILAMENT_RUNOUT);
+      runout.reset();
+    // Don't change to pause screen if already pressed filament change
+    } else if (ScreenHandler.getCurrentScreen() != DGUSLCD_SCREEN_SDUTILITY){
+      ScreenHandler.GotoScreen(DGUSLCD_SCREEN_SDPRINTPAUSED);
+    }
+  }
   void onPrintTimerStopped() {}
   void onFilamentRunout(const extruder_t extruder) {}
 
@@ -124,6 +137,12 @@ namespace ExtUI {
     }
   #endif
 
+  //Elsan
+  void onFileHasFinished() {
+      // Called for temperature PID tuning result
+      //SERIAL_ECHOLNPGM("onFileHasFinished");
+      ScreenHandler.GotoScreen(DGUSLCD_SCREEN_SDPRINT_DONE);
+    }
 
   #if HAS_PID_HEATING
     void onPidTuning(const result_t rst) {
