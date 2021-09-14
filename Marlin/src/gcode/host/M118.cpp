@@ -23,6 +23,11 @@
 #include "../gcode.h"
 #include "../../core/serial.h"
 
+#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
+#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
+char WIFI_IP[20]; //Elsan
+extern char ETH_IP[];
+
 /**
  * M118: Display a message in the host console.
  *
@@ -68,6 +73,13 @@ void GcodeSuite::M118() {
   if (hasE) SERIAL_ECHO_START();
   if (hasA) SERIAL_ECHOPGM("// ");
   SERIAL_ECHOLN(p);
+
+  if(strstr(p,"WIFI_IP")) {
+    strcpy(WIFI_IP,p); //Elsan
+    //dgusdisplay.WriteVariable(VP_SD_Print_Filename, fname2, VP_SD_FileName_LEN, true);  //Elsan
+    dgusdisplay.WriteVariable(0x3900, WIFI_IP+8, 32, true);  //Elsan
+    dgusdisplay.WriteVariable(0x3932, ETH_IP, 32, true);  //Elsan
+  }
 
   TERN_(HAS_MULTI_SERIAL, serial_port_index = old_serial);
 }

@@ -21,6 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "usbh_core.h"
 
+//#include "../../../../core/serial.h"  //Elsan
+
 int prnt(char *ptr, int len);
 
 /** @addtogroup USBH_LIB
@@ -777,7 +779,9 @@ USBH_StatusTypeDef  USBH_Process(USBH_HandleTypeDef *phost)
       break;
 
     case HOST_DEV_DISCONNECTED :
-    	prnt_els("HOST_DEV_DISCONNECTED");
+    	//prnt_els("HOST_DEV_DISCONNECTED");
+      //SERIAL_ECHOLN("USB test"); //Elsan
+
       phost->device.is_disconnected = 0U;
 
       DeInitStateMachine(phost);

@@ -359,6 +359,7 @@ const struct VPMapping VPMap[] PROGMEM = {
   { DGUSLCD_SCREEN_FILAMENT_HEATING, VPList_Filament_heating },
   { DGUSLCD_SCREEN_FILAMENT_LOADING, VPList_Filament_load_unload },
   { DGUSLCD_SCREEN_FILAMENT_UNLOADING, VPList_Filament_load_unload },
+  { DGUSLCD_SCREEN_FILAMENT_CONFIRM, VPList_Filament_load_unload },
   { DGUSLCD_SCREEN_SDUTILITY, VPList_SD_Filament_load_unload },
   { DGUSLCD_SCREEN_SD_FILAMENT_LOAD, VPList_SD_Filament_load_unload },
   { DGUSLCD_SCREEN_SD_FILAMENT_UNLOAD, VPList_SD_Filament_load_unload },
@@ -379,7 +380,7 @@ const struct VPMapping VPMap[] PROGMEM = {
   { 0 , nullptr } // List is terminated with an nullptr as table entry.
 };
 
-const char MarlinVersion[] PROGMEM = SHORT_BUILD_VERSION;
+const char MarlinVersion[] PROGMEM = /*SHORT_BUILD_VERSION*/ DETAILED_BUILD_VERSION;
 
 // Helper to define a DGUS_VP_Variable for common use cases.
 #define VPHELPER(VPADR, VPADRVAR, RXFPTR, TXFPTR ) { .VP=VPADR, .memadr=VPADRVAR, .size=sizeof(VPADRVAR), \
@@ -414,7 +415,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
     VPHELPER(VP_HOME_ALL, nullptr, &ScreenHandler.HandleManualMove, nullptr),
   #endif
   VPHELPER(VP_MOTOR_LOCK_UNLOK, nullptr, &ScreenHandler.HandleMotorLockUnlock, nullptr),
-  
+  VPHELPER(VP_EEPROM_SAVE_RESTORE_SETTINGS, nullptr, /*&DGUSScreenVariableHandler::*/&ScreenHandler.HandleEepromSaveRestoreSettings, nullptr), //Elsan
   
   #if ENABLED(POWER_LOSS_RECOVERY)
     VPHELPER(VP_POWER_LOSS_RECOVERY, nullptr, &ScreenHandler.HandlePowerLossRecovery, nullptr),
@@ -442,7 +443,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
     VPHELPER(VP_T_E0_Is, &thermalManager.temp_hotend[0].celsius, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<0>),
     VPHELPER(VP_T_E0_Set, &thermalManager.temp_hotend[0].target, ScreenHandler.HandleTemperatureChanged, &ScreenHandler.DGUSLCD_SendWordValueToDisplay),
     VPHELPER(VP_Flowrate_E0, &planner.flow_percentage[ExtUI::extruder_t::E0], ScreenHandler.HandleFlowRateChanged, &ScreenHandler.DGUSLCD_SendWordValueToDisplay),
-    VPHELPER(VP_EPos, &destination.e, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
+    VPHELPER(VP_EPos, /*&destination.e*/&current_position.e, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
     VPHELPER(VP_MOVE_E0, nullptr, &ScreenHandler.HandleManualExtrude, nullptr),
     VPHELPER(VP_E0_CONTROL, &thermalManager.temp_hotend[0].target, &ScreenHandler.HandleHeaterControl, nullptr),
     VPHELPER(VP_E0_STATUS, &thermalManager.temp_hotend[0].target, nullptr, &ScreenHandler.DGUSLCD_SendHeaterStatusToDisplay),
@@ -456,8 +457,10 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
       VPHELPER(VP_PID_AUTOTUNE_E0, nullptr, &ScreenHandler.HandlePIDAutotune, nullptr),
     #endif
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
+      VPHELPER(VP_FILAMENT_LOAD_UNLOAD_INIT, nullptr, &ScreenHandler.HandleFilamentInit, nullptr),
       VPHELPER(VP_E0_FILAMENT_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleFilamentOption, &ScreenHandler.HandleFilamentLoadUnload),
-      VPHELPER(VP_E0_FILAMENT_SD_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleSDFilamentOption, &ScreenHandler.HandleSDFilamentLoadUnload),
+      VPHELPER(VP_E0_FILAMENT_SD_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleSDFilamentOption, &ScreenHandler.HandleSDFilamentLoadUnload),      
+      VPHELPER(VP_FILAMENT_LOAD_UNLOAD_CONFIRMATION, nullptr, &ScreenHandler.HandleFilamentConfirmation, nullptr),
     #endif
   #endif
   #if HOTENDS >= 2
@@ -471,6 +474,7 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
       VPHELPER(VP_PID_AUTOTUNE_E1, nullptr, &ScreenHandler.HandlePIDAutotune, nullptr),
     #endif
     VPHELPER(VP_E1_FILAMENT_LOAD_UNLOAD, nullptr, &ScreenHandler.HandleFilamentOption, &ScreenHandler.HandleFilamentLoadUnload),
+    VPHELPER(VP_E1_FILAMENT_SD_LOAD_UNLOAD, nullptr, &ScreenHandler::HandleSDFilamentOption, &ScreenHandler::HandleSDFilamentLoadUnload),
   #endif
   #if HAS_HEATED_BED
     VPHELPER(VP_T_Bed_Is, &thermalManager.temp_bed.celsius, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<0>),

@@ -483,12 +483,14 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
 
   show_continue_prompt(is_reload);
 
-  first_impatient_beep(max_beep_count);
+  first_impatient_beep(max_beep_count); 
 
-  // Start the heater idle timers
-  const millis_t nozzle_timeout = SEC_TO_MS(PAUSE_PARK_NOZZLE_TIMEOUT);
+  #if ENABLED(PAUSE_PARK_NOZZLE_TIMEOUT)   //Elsan from Xlite
+    // Start the heater idle timers
+    const millis_t nozzle_timeout = SEC_TO_MS(PAUSE_PARK_NOZZLE_TIMEOUT);
 
-  HOTEND_LOOP() thermalManager.heater_idle[e].start(nozzle_timeout);
+    HOTEND_LOOP() thermalManager.heater_idle[e].start(nozzle_timeout);
+  #endif
 
   #if ENABLED(DUAL_X_CARRIAGE)
     const int8_t saved_ext        = active_extruder;
@@ -498,12 +500,16 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
   #endif
 
   // Wait for filament insert by user and press button
-  KEEPALIVE_STATE(PAUSED_FOR_USER);
+  KEEPALIVE_STATE(PAUSED_FOR_USER); //Elsan dis for test
+
   TERN_(HOST_PROMPT_SUPPORT, host_prompt_do(PROMPT_USER_CONTINUE, GET_TEXT(MSG_NOZZLE_PARKED), CONTINUE_STR));
-  TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(GET_TEXT(MSG_NOZZLE_PARKED)));
-  wait_for_user = true;    // LCD click or M108 will clear this
+
+  //TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(GET_TEXT(MSG_NOZZLE_PARKED)));  //Elsan dis from Xlite.
+
+  wait_for_user = true;    // LCD click or M108 will clear this   
+  
   while (wait_for_user) {
-    impatient_beep(max_beep_count);
+    //impatient_beep(max_beep_count);
 
     // If the nozzle has timed out...
     if (!nozzle_timed_out)
@@ -517,16 +523,16 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
 
       TERN_(HOST_PROMPT_SUPPORT, host_prompt_do(PROMPT_USER_CONTINUE, GET_TEXT(MSG_HEATER_TIMEOUT), GET_TEXT(MSG_REHEAT)));
 
-      TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(GET_TEXT(MSG_HEATER_TIMEOUT)));
+      //TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(GET_TEXT(MSG_HEATER_TIMEOUT))); //Elsan dis from Xlite
 
-      wait_for_user_response(0, true); // Wait for LCD click or M108
+      wait_for_user_response(0, true); // Wait for LCD click or M108        
 
       TERN_(HOST_PROMPT_SUPPORT, host_prompt_do(PROMPT_INFO, GET_TEXT(MSG_REHEATING)));
 
-      TERN_(EXTENSIBLE_UI, ExtUI::onStatusChanged_P(GET_TEXT(MSG_REHEATING)));
+      TERN_(EXTENSIBLE_UI, ExtUI::onStatusChanged_P(GET_TEXT(MSG_REHEATING)));      
 
       // Re-enable the heaters if they timed out
-      HOTEND_LOOP() thermalManager.reset_hotend_idle_timer(e);
+      HOTEND_LOOP() thermalManager.reset_hotend_idle_timer(e);  
 
       // Wait for the heaters to reach the target temperatures
       ensure_safe_temperature(false);
@@ -534,17 +540,21 @@ void wait_for_confirmation(const bool is_reload/*=false*/, const int8_t max_beep
       // Show the prompt to continue
       show_continue_prompt(is_reload);
 
-      // Start the heater idle timers
-      const millis_t nozzle_timeout = SEC_TO_MS(PAUSE_PARK_NOZZLE_TIMEOUT);
+      #if ENABLED(PAUSE_PARK_NOZZLE_TIMEOUT) //Elsan from Xlite
+        // Start the heater idle timers
+        const millis_t nozzle_timeout = SEC_TO_MS(PAUSE_PARK_NOZZLE_TIMEOUT);
 
-      HOTEND_LOOP() thermalManager.heater_idle[e].start(nozzle_timeout);
+        HOTEND_LOOP() thermalManager.heater_idle[e].start(nozzle_timeout);
+      #endif
+
       TERN_(HOST_PROMPT_SUPPORT, host_prompt_do(PROMPT_USER_CONTINUE, PSTR("Reheat Done"), CONTINUE_STR));
-      TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(PSTR("Reheat finished.")));
-      wait_for_user = true;
-      nozzle_timed_out = false;
+      //TERN_(EXTENSIBLE_UI, ExtUI::onUserConfirmRequired_P(PSTR("Reheat finished.")));   //Elsan dis from Xlite.
+      wait_for_user = true;       
+      nozzle_timed_out = false;      
 
       first_impatient_beep(max_beep_count);
     }
+    
     idle_no_sleep();
   }
   #if ENABLED(DUAL_X_CARRIAGE)

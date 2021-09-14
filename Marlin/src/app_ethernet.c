@@ -24,6 +24,11 @@
 #include "lcd_log.h"
 #endif
 
+//#include "lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
+//#include "lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
+//extern DGUSDisplay dgusdisplay;
+char ETH_IP[20];  //Elsan
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -147,9 +152,9 @@ void DHCP_Process(struct netif *netif)
   ip_addr_t netmask;
   ip_addr_t gw;
   struct dhcp *dhcp;   
-#ifdef USE_LCD 
+//#ifdef USE_LCD 
   uint8_t iptxt[20];
-#endif
+//#endif
   
   switch (DHCP_state)
   {
@@ -172,12 +177,14 @@ void DHCP_Process(struct netif *netif)
       {
         DHCP_state = DHCP_ADDRESS_ASSIGNED;
         
-#ifdef USE_LCD 
+//#ifdef USE_LCD  //Elsan code necessary for IP address
         sprintf((char *)iptxt, "%s", ip4addr_ntoa((const ip4_addr_t *)&netif->ip_addr));
-        LCD_UsrLog ("IP address assigned by a DHCP server: %s\n", iptxt); 
-#else
-        BSP_LED_On(LED1);   
-#endif
+        //LCD_UsrLog ("IP address assigned by a DHCP server: %s\n", iptxt); //Elsan dis
+        strcpy(ETH_IP,iptxt); //Elsan
+        //dgusdisplay.WriteVariable(0x3932, ETH_IP, 32, true);  //Elsan
+//#else
+        //BSP_LED_On(LED1);   //Elsan dis
+//#endif
       }
       else
       {
@@ -202,7 +209,7 @@ void DHCP_Process(struct netif *netif)
           LCD_UsrLog ("DHCP Timeout !! \n");
           LCD_UsrLog ("Static IP address: %s\n", iptxt);   
 #else
-          BSP_LED_On(LED1);  
+          //BSP_LED_On(LED1); //Elsan dis  
 #endif
         }
       }

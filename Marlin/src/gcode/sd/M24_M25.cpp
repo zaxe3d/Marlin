@@ -60,8 +60,12 @@ void GcodeSuite::M24() {
   #endif
 
   #if ENABLED(PARK_HEAD_ON_PAUSE)
-    if (did_pause_print) {
-      resume_print(); // will call print_job_timer.start()
+    if (did_pause_print) {  
+    //if(print_stat==2) {  //Elsan test
+      resume_print(); // will call print_job_timer.start()   
+      if(print_stat==2) print_stat=1; //Elsan resume.
+      else print_stat=1;  
+      //print_stat=1; //Elsan already paused, now start. 
       return;
     }
   #endif
@@ -93,9 +97,15 @@ void GcodeSuite::M24() {
 void GcodeSuite::M25() {
 
   #if ENABLED(PARK_HEAD_ON_PAUSE)
+    //Elsan
+    #if ENABLED(SDSUPPORT)
+      if (IS_SD_PRINTING()) card.pauseSDPrint();
+      
+    #endif
+    print_stat=2; //Elsan enable and test if ADVANCED_PAUSE_FEATURE is used.
 
     M125();
-
+    
   #else
 
     // Set initial pause flag to prevent more commands from landing in the queue while we try to pause

@@ -109,7 +109,7 @@ static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
 int FATFS_second=0;
 void usb_ls(void)
 {  
-  char stre[200];
+	char stre[200];
   long cntr=0;
     
   //SERIAL_ECHOLNPGM("usb_ls starting");
@@ -154,14 +154,14 @@ void usb_ls(void)
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.device.is_connected);
         SERIAL_ECHOPGM("device.is_connected: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // USB Host Background task 
@@ -171,40 +171,40 @@ void usb_ls(void)
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", Appli_state);
         SERIAL_ECHOPGM("Appli_state: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // Mass Storage Application State Machine 
         switch(Appli_state)
         {
-          case APPLICATION_START:
+        case APPLICATION_START:
         
-          MSC_Application();
+      	MSC_Application();
         
-          stre[0]=0;//clean content
-          //sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
-          //SERIAL_ECHOPGM("Vendor ID: ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	//SERIAL_ECHOPGM("Vendor ID: ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          stre[0]=0;//clean content
-          //sprintf(stre, "%d", hUSBHost.device.speed);
-          //SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.speed);
+      	//SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          Appli_state = APPLICATION_IDLE;
-          //SERIAL_ECHOLNPGM("usb_ls leave");
-          return; //Elsan no need to wait for remaining loops.
-          break;
+        Appli_state = APPLICATION_IDLE;
+        //SERIAL_ECHOLNPGM("usb_ls leave");
+        return; //Elsan no need to wait for remaining loops.
+        break;
 
-          case APPLICATION_IDLE:
-          default:
-            break;
+        case APPLICATION_IDLE:
+        default:
+        break;
         }
 
        cntr++; 
@@ -217,7 +217,7 @@ void usb_ls(void)
 //For DGUS
 void usb_ls2(void)
 {  
-  char stre[200];
+	char stre[200];
   long cntr=0;
       
   //SERIAL_ECHOLNPGM("usb_ls starting");  
@@ -235,83 +235,83 @@ void usb_ls2(void)
   } 
     
   //##-1- Link the USB Host disk I/O driver ##################################
-  if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
-  {
-    //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
-    FATFS_second=1;
+    if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
+    { 
+      //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
+      FATFS_second=1;
       
-    //##-2- Init Host Library ################################################
-    USBH_Init(&hUSBHost, USBH_UserProcess, 0);
+      //##-2- Init Host Library ################################################
+      USBH_Init(&hUSBHost, USBH_UserProcess, 0); 
       
-    //##-3- Add Supported Class ##############################################
-    USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS);
+      //##-3- Add Supported Class ##############################################
+      USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); 
       
-    //##-4- Start Host Process ###############################################
-    USBH_Start(&hUSBHost); //Enable one by one.
+      //##-4- Start Host Process ###############################################
+      USBH_Start(&hUSBHost); //Enable one by one.
 
-    //##-5- Run Application (Blocking mode) ##################################
-    //while (1) { //Elsan run one time as Marlin could crash.
-    while(cntr<100000) { //100000
-      /*
+      //##-5- Run Application (Blocking mode) ##################################
+      //while (1) { //Elsan run one time as Marlin could crash.
+      while(cntr<100000) { //100000
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      /*
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.device.is_connected);
         SERIAL_ECHOPGM("device.is_connected: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      // USB Host Background task
-      USBH_Process(&hUSBHost);
+        // USB Host Background task 
+        USBH_Process(&hUSBHost);
 
-      /*
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
-      /*
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", Appli_state);
         SERIAL_ECHOPGM("Appli_state: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      // Mass Storage Application State Machine
-      switch(Appli_state)
-      {
+        // Mass Storage Application State Machine 
+        switch(Appli_state)
+        {
         case APPLICATION_START:
         
-          MSC_Application4();
+      	MSC_Application4();
         
-          stre[0]=0;//clean content
-          //sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
-          //SERIAL_ECHOPGM("Vendor ID: ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	//SERIAL_ECHOPGM("Vendor ID: ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          stre[0]=0;//clean content
-          //sprintf(stre, "%d", hUSBHost.device.speed);
-          //SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.speed);
+      	//SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          Appli_state = APPLICATION_IDLE;
-          //SERIAL_ECHOLNPGM("usb_ls leave");
-          return; //Elsan no need to wait for remaining loops.
-          break;
+        Appli_state = APPLICATION_IDLE;
+        //SERIAL_ECHOLNPGM("usb_ls leave");
+        return; //Elsan no need to wait for remaining loops.
+        break;
 
         case APPLICATION_IDLE:
         default:
-          break;
-      }
+        break;
+        }
 
-      cntr++;
+       cntr++; 
+      }
     }
-  }
     
   //SERIAL_ECHOLNPGM("usb_ls finished");
 }
@@ -319,14 +319,8 @@ void usb_ls2(void)
 static void MSC_Application(void)
 {
   FRESULT res;                                          /* FatFs function common result code */
-  //uint32_t byteswritten, bytesread;                     /* File write/read counts */
-  //uint8_t wtext[] = "This is STM32 working with FatFs"; /* File write buffer */
-  //uint8_t rtext[100];
   int err_code;/* File read buffer */
-  //char stre[20];
-
-  //SERIAL_ECHOLNPGM("MSC_App->entered");
-
+  
   /* Register the file system object to the FatFs module */
   if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
   {
@@ -335,81 +329,11 @@ static void MSC_Application(void)
     Error_Handler();
   }
   else
-  {
-    //SERIAL_ECHOLNPGM("MSC_App->f_mount");
-
-    /* Create and Open a new text file object with write access */
-    //if(f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
-    //err_code=f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-    //if(err_code!=FR_OK)
-    //{
-      /* 'STM32.TXT' file Open for write Error */
-      //SERIAL_ECHOPGM("MSC_App->f_open:error");
-      //Error_Handler();
-    //}
-    //else
-    //{ 
-      //SERIAL_ECHOLNPGM("MSC_App->f_open");
-
-      /* Write data to the text file */      
-      //res = f_write(&MyFile, wtext, sizeof(wtext), (UINT*)&byteswritten);
-
-      //if((byteswritten == 0) || (res != FR_OK))
-      //{
-        /* 'STM32.TXT' file Write or EOF Error */
-        //Error_Handler();
-      //}
-      //else
-      //{
-        /* Close the open text file */
-        //f_close(&MyFile);
-
-        /* Open the text file object with read access */
-        //if(f_open(&MyFile, "STM32.TXT", FA_READ) != FR_OK)
-        //{
-          /* 'STM32.TXT' file Open for read Error */
-          //Error_Handler();
-        //}
-        //else
-        //{
-          /* Read data from the text file */          
-          //res = f_read(&MyFile, rtext, sizeof(rtext),(UINT*) &bytesread);
-
-          //if((bytesread == 0) || (res != FR_OK))
-          //{
-            /* 'STM32.TXT' file Read or EOF Error */
-            //Error_Handler();
-          //}
-          //else
-          //{
-            /* Close the open text file */
-            //f_close(&MyFile);
-
-            /* Compare read data with the expected data */
-            //if((bytesread != byteswritten))
-            //{
-              /* Read data is different from the expected data */
-              //Error_Handler();
-            //}
-            //else
-            //{
-              /* Success of the demo: no error occurrence */
-                    
-              //SERIAL_ECHOPGM((char*)rtext);
-              //SERIAL_ECHOLNPGM("");
-              
-              //SERIAL_ECHOPGM(USBDISKPath);
-              //SERIAL_ECHOLNPGM("");
-
-              SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
-              Explore_Disk2("0:/", 1);
-              //Explore_Disk("0:/", 1);
-              SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
-            //}
-          //}
-        //}
-      //}
-    //}
+  {	    
+    SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
+    Explore_Disk2("0:/", 1);
+    SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
+    
   }
 
   /* Unlink the USB disk I/O driver */
@@ -417,16 +341,7 @@ static void MSC_Application(void)
 }
 
 static void MSC_Application4(void)
-{
-  //FRESULT res;                                          /* FatFs function common result code */
-  //uint32_t byteswritten, bytesread;                     /* File write/read counts */
-  //uint8_t wtext[] = "This is STM32 working with FatFs"; /* File write buffer */
-  //uint8_t rtext[100];
-  //int err_code;/* File read buffer */
-  //char stre[20];
-
-  //SERIAL_ECHOLNPGM("MSC_App->entered");
-
+{  
   /* Register the file system object to the FatFs module */
   if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
   {
@@ -435,83 +350,8 @@ static void MSC_Application4(void)
     Error_Handler();
   }
   else
-  {
-    //SERIAL_ECHOLNPGM("MSC_App->f_mount");
-
-    /* Create and Open a new text file object with write access */    
-    //err_code=f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-    //if(err_code!=FR_OK)
-    //{
-      /* 'STM32.TXT' file Open for write Error */
-      //SERIAL_ECHOPGM("MSC_App->f_open:error");
-      //sprintf(stre, "%d", err_code);
-      
-      //Error_Handler();
-    //}
-    //else
-    //{ 
-      //SERIAL_ECHOLNPGM("MSC_App->f_open");
-
-      /* Write data to the text file */      
-      //res = f_write(&MyFile, wtext, sizeof(wtext), (UINT*)&byteswritten);
-
-      //if((byteswritten == 0) || (res != FR_OK))
-      //{
-        /* 'STM32.TXT' file Write or EOF Error */
-        //Error_Handler();
-      //}
-      //else
-      //{
-        /* Close the open text file */
-        //f_close(&MyFile);
-
-        /* Open the text file object with read access */
-        //if(f_open(&MyFile, "STM32.TXT", FA_READ) != FR_OK)
-        //{
-          /* 'STM32.TXT' file Open for read Error */
-          //Error_Handler();
-        //}
-        //else
-        //{
-          /* Read data from the text file */
-          //res = f_read(&MyFile, rtext, sizeof(rtext), (void *)&bytesread);
-          //res = f_read(&MyFile, rtext, sizeof(rtext),(UINT*) &bytesread);
-
-          //if((bytesread == 0) || (res != FR_OK))
-          //{
-            /* 'STM32.TXT' file Read or EOF Error */
-            //Error_Handler();
-          //}
-          //else
-          //{
-            /* Close the open text file */
-            //f_close(&MyFile);
-
-            /* Compare read data with the expected data */
-            //if((bytesread != byteswritten))
-            //{
-              /* Read data is different from the expected data */
-              //Error_Handler();
-            //}
-            //else
-            //{
-              /* Success of the demo: no error occurrence */
-                    
-              //SERIAL_ECHOPGM((char*)rtext);
-              //SERIAL_ECHOLNPGM("");
-              
-              //SERIAL_ECHOPGM(USBDISKPath);
-              //SERIAL_ECHOLNPGM("");
-
-              //SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
-              //Explore_Disk("0:/", 1);
-              Explore_Disk3("0:/", 1);
-              //SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
-            //}
-          //}
-        //}
-      //}
-    //}
+  {	
+    Explore_Disk3("0:/", 1);  
   }
 
   /* Unlink the USB disk I/O driver */
@@ -581,20 +421,20 @@ FRESULT Explore_Disk(char *path, uint8_t recu_level)
       if(recu_level == 1)
       {
         //LCD_DbgLog("   |__");
-        //prnt2("   |__",6);
+    	  //prnt2("   |__",6);
         SERIAL_ECHOPGM("   |__");
       }
       else if(recu_level == 2)
       {
         //LCD_DbgLog("   |   |__");
-        //prnt2("   |   |__",10);
+    	  //prnt2("   |   |__",10);
         SERIAL_ECHOPGM("   |   |__");
       }
 
-      if((fno.fattrib & AM_DIR) == AM_DIR)
+      if((fno.fattrib & AM_DIR) == AM_DIR)      
       {
         //LCD_UsrLog((void *)tmp);
-        //prnt(tmp,strlen(tmp));
+    	  //prnt(tmp,strlen(tmp));
         SERIAL_ECHOPGM(tmp);SERIAL_ECHOLNPGM("");
         Explore_Disk(fn, 2);
       }
@@ -610,7 +450,7 @@ FRESULT Explore_Disk(char *path, uint8_t recu_level)
         SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
       }
 
-      if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))
+      if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))      
       {
         Explore_Disk(fn, 2);
       }
@@ -648,7 +488,8 @@ FRESULT Explore_Disk2(char *path, uint8_t recu_level)
       {
         break;
       }
-      if(fno.fname[0] == '.')
+      //if(fno.fname[0] == '.')
+      if((fno.fname[0] == '.')||((fno.fattrib & AM_HID) == AM_HID)) //Elsan test
       {
         continue;
       }
@@ -669,7 +510,8 @@ FRESULT Explore_Disk2(char *path, uint8_t recu_level)
         //SERIAL_ECHOPGM("   |   |__");        
       }
 
-      if((fno.fattrib & AM_DIR) == AM_DIR)
+      //if((fno.fattrib & AM_DIR) == AM_DIR)
+      if(((fno.fattrib & AM_DIR) == AM_DIR)&&((fno.fattrib & AM_HID) != AM_HID))
       {
         //prnt(tmp,strlen(tmp));
         //SERIAL_ECHOPGM(tmp);SERIAL_ECHOLNPGM(""); 
@@ -695,7 +537,8 @@ FRESULT Explore_Disk2(char *path, uint8_t recu_level)
         SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
       }
 
-      if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))
+      //if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))
+      if(((fno.fattrib & AM_DIR) == AM_DIR)&&((fno.fattrib & AM_HID) != AM_HID)&&(recu_level == 2))
       {
         Explore_Disk2(fn, 2);
       }
@@ -730,7 +573,8 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
       {
         break;
       }
-      if(fno.fname[0] == '.')
+      //if(fno.fname[0] == '.')
+      if((fno.fname[0] == '.')||((fno.fattrib & AM_HID) == AM_HID)) //Elsan test
       {
         continue;
       }
@@ -743,7 +587,7 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
       if(recu_level == 1)
       {
         //LCD_DbgLog("   |__");
-        //prnt2("   |__",6);
+    	  //prnt2("   |__",6);
         //SERIAL_ECHOPGM("   |__");
 
         //strcpy(path2,"");
@@ -753,7 +597,7 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
       else if(recu_level == 2)
       {
         //LCD_DbgLog("   |   |__");
-        //prnt2("   |   |__",10);
+    	  //prnt2("   |   |__",10);
         //SERIAL_ECHOPGM("   |   |__");
 
         //strcpy(path2,"/");
@@ -762,10 +606,11 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
         //SERIAL_ECHOPGM(path_prev);
       }
 
-      if((fno.fattrib & AM_DIR) == AM_DIR)
+      //if((fno.fattrib & AM_DIR) == AM_DIR)
+      if(((fno.fattrib & AM_DIR) == AM_DIR)&&((fno.fattrib & AM_HID) != AM_HID))
       {
         //LCD_UsrLog((void *)tmp);
-        //SERIAL_ECHOPGM(tmp);SERIAL_ECHOLNPGM("");
+    	  //SERIAL_ECHOPGM(tmp);SERIAL_ECHOLNPGM("");
 
         strcpy(path2,"/");
         strcat(path2,tmp); strcat(path2,"/");
@@ -791,7 +636,8 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
                        
       }
 
-      if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))
+      //if(((fno.fattrib & AM_DIR) == AM_DIR)&&(recu_level == 2))
+      if(((fno.fattrib & AM_DIR) == AM_DIR)&&((fno.fattrib & AM_HID) != AM_HID)&&(recu_level == 2))
       {
         Explore_Disk3(fn, 2);
       }
@@ -806,7 +652,7 @@ FRESULT Explore_Disk3(char *path, uint8_t recu_level)
 
 void usb_file_open(void)
 {  
-  char stre[/*200*/100];
+	char stre[/*200*/100];
   long cntr=0;
     
   //SERIAL_ECHOLNPGM("usb_ls starting");
@@ -851,14 +697,14 @@ void usb_file_open(void)
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.device.is_connected);
         SERIAL_ECHOPGM("device.is_connected: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // USB Host Background task 
@@ -868,52 +714,52 @@ void usb_file_open(void)
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", Appli_state);
         SERIAL_ECHOPGM("Appli_state: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // Mass Storage Application State Machine 
         switch(Appli_state)
         {
-          case APPLICATION_START:
+        case APPLICATION_START:
         
-            MSC_Application2();
+      	MSC_Application2();
         
-            stre[0]=0;//clean content
-            //sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
-            //SERIAL_ECHOPGM("Vendor ID: ");
-            //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	//SERIAL_ECHOPGM("Vendor ID: ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-            stre[0]=0;//clean content
-            //sprintf(stre, "%d", hUSBHost.device.speed);
-            //SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
-            //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.speed);
+      	//SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-            Appli_state = APPLICATION_IDLE;
-            //SERIAL_ECHOLNPGM("usb_ls leave");
-            return; //Elsan no need to wait for remaining loops.
-            break;
+        Appli_state = APPLICATION_IDLE;
+        //SERIAL_ECHOLNPGM("usb_ls leave");
+        return; //Elsan no need to wait for remaining loops.
+        break;
 
-          case APPLICATION_IDLE:
-          default:
-            break;
+        case APPLICATION_IDLE:
+        default:
+        break;
         }
 
-        cntr++;
+       cntr++; 
       }
     }
     
-    //SERIAL_ECHOLNPGM("usb_ls finished");
+  //SERIAL_ECHOLNPGM("usb_ls finished");
 }
 
 void usb_file_open_wr(void)
 {  
-  char stre[200];
+	char stre[200];
   long cntr=0;
     
   //SERIAL_ECHOLNPGM("usb_ls starting");
@@ -925,7 +771,7 @@ void usb_file_open_wr(void)
 
   /* Initialize all configured peripherals */
   //Elsan this part can be put in init functions of main.
-  MX_GPIO_Init();
+  //MX_GPIO_Init(); //Put in main setup.
   //MX_FATFS_Init();
   //MX_USB_HOST_Init();
     
@@ -937,90 +783,90 @@ void usb_file_open_wr(void)
   } 
     
   //##-1- Link the USB Host disk I/O driver ##################################
-  if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
-  {
-    //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
-    FATFS_second=1;
+    if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
+    { 
+      //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
+      FATFS_second=1;
       
-    //##-2- Init Host Library ################################################
-    USBH_Init(&hUSBHost, USBH_UserProcess, 0); //Enable one by one.
+      //##-2- Init Host Library ################################################
+      USBH_Init(&hUSBHost, USBH_UserProcess, 0); //Enable one by one.
       
-    //##-3- Add Supported Class ##############################################
-    USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); //Enable one by one.
+      //##-3- Add Supported Class ##############################################
+      USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); //Enable one by one.
       
-    //##-4- Start Host Process ###############################################
-    USBH_Start(&hUSBHost); //Enable one by one.
+      //##-4- Start Host Process ###############################################
+      USBH_Start(&hUSBHost); //Enable one by one.
 
-    //##-5- Run Application (Blocking mode) ##################################
-    //while (1) { //Elsan run one time as Marlin could crash.
-    while(cntr<100000) {
-      /*
+      //##-5- Run Application (Blocking mode) ##################################
+      //while (1) { //Elsan run one time as Marlin could crash.
+      while(cntr<100000) {
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      /*
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.device.is_connected);
         SERIAL_ECHOPGM("device.is_connected: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      // USB Host Background task
-      USBH_Process(&hUSBHost);
+        // USB Host Background task 
+        USBH_Process(&hUSBHost);
 
-      /*
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
-      /*
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", Appli_state);
         SERIAL_ECHOPGM("Appli_state: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
-      */
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        */
 
-      // Mass Storage Application State Machine
-      switch(Appli_state)
-      {
+        // Mass Storage Application State Machine 
+        switch(Appli_state)
+        {
         case APPLICATION_START:
         
-          MSC_Application3();
+      	MSC_Application3();
         
-          stre[0]=0;//clean content
-          sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
-          //SERIAL_ECHOPGM("Vendor ID: ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+        stre[0]=0;//clean content
+      	sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	//SERIAL_ECHOPGM("Vendor ID: ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          stre[0]=0;//clean content
-          sprintf(stre, "%d", hUSBHost.device.speed);
-          //SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
-          //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	stre[0]=0;//clean content
+      	sprintf(stre, "%d", hUSBHost.device.speed);
+      	//SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-          Appli_state = APPLICATION_IDLE;
-          //SERIAL_ECHOLNPGM("usb_ls leave");
-          return; //Elsan no need to wait for remaining loops.
-          break;
+        Appli_state = APPLICATION_IDLE;
+        //SERIAL_ECHOLNPGM("usb_ls leave");
+        return; //Elsan no need to wait for remaining loops.
+        break;
 
         case APPLICATION_IDLE:
         default:
-          break;
-      }
+        break;
+        }
 
-      cntr++;
+       cntr++; 
+      }
     }
-  }
     
   //SERIAL_ECHOLNPGM("usb_ls finished");
 }
 
 void usb_file_del(void)
 {  
-  char stre[200];
+	char stre[200];
   long cntr=0;
     
   //SERIAL_ECHOLNPGM("usb_ls starting");
@@ -1032,7 +878,7 @@ void usb_file_del(void)
 
   /* Initialize all configured peripherals */
   //Elsan this part can be put in init functions of main.
-  MX_GPIO_Init();
+  //MX_GPIO_Init(); //Put in main setup.
   //MX_FATFS_Init();
   //MX_USB_HOST_Init();
     
@@ -1044,35 +890,35 @@ void usb_file_del(void)
   } 
     
   //##-1- Link the USB Host disk I/O driver ##################################
-  if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
-  {
-    //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
-    FATFS_second=1;
+    if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
+    { 
+      //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
+      FATFS_second=1;
       
-    //##-2- Init Host Library ################################################
-    USBH_Init(&hUSBHost, USBH_UserProcess, 0); //Enable one by one.
+      //##-2- Init Host Library ################################################
+      USBH_Init(&hUSBHost, USBH_UserProcess, 0); //Enable one by one.
       
-    //##-3- Add Supported Class ##############################################
-    USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); //Enable one by one.
+      //##-3- Add Supported Class ##############################################
+      USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); //Enable one by one.
       
-    //##-4- Start Host Process ###############################################
-    USBH_Start(&hUSBHost); //Enable one by one.
+      //##-4- Start Host Process ###############################################
+      USBH_Start(&hUSBHost); //Enable one by one.
 
-    //##-5- Run Application (Blocking mode) ##################################
-    //while (1) { //Elsan run one time as Marlin could crash.
-    while(cntr<100000) {
-      /*
+      //##-5- Run Application (Blocking mode) ##################################
+      //while (1) { //Elsan run one time as Marlin could crash.
+      while(cntr<100000) {
+        /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.device.is_connected);
         SERIAL_ECHOPGM("device.is_connected: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // USB Host Background task 
@@ -1082,13 +928,13 @@ void usb_file_del(void)
         stre[0]=0;//clean content
         sprintf(stre, "%d", hUSBHost.gState);
         SERIAL_ECHOPGM("gState: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
         /*
         stre[0]=0;//clean content
         sprintf(stre, "%d", Appli_state);
         SERIAL_ECHOPGM("Appli_state: ");
-        SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
         */
 
         // Mass Storage Application State Machine 
@@ -1096,17 +942,17 @@ void usb_file_del(void)
         {
         case APPLICATION_START:
         
-          MSC_Application5();
+      	MSC_Application5();
         
         stre[0]=0;//clean content
-        sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
-        //SERIAL_ECHOPGM("Vendor ID: ");
-        //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	//SERIAL_ECHOPGM("Vendor ID: ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
-        stre[0]=0;//clean content
-        sprintf(stre, "%d", hUSBHost.device.speed);
-        //SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
-        //SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
+      	stre[0]=0;//clean content
+      	sprintf(stre, "%d", hUSBHost.device.speed);
+      	//SERIAL_ECHOPGM("Speed (0-HS, 1-FS, 2-LS): ");
+      	//SERIAL_ECHOPGM(stre);SERIAL_ECHOLNPGM("");
 
         Appli_state = APPLICATION_IDLE;
         //SERIAL_ECHOLNPGM("usb_ls leave");
@@ -1127,15 +973,9 @@ void usb_file_del(void)
 
 static void MSC_Application2(void)
 {
-  FRESULT res;                                          /* FatFs function common result code */
-  uint32_t byteswritten, bytesread;                     /* File write/read counts */
-  //uint8_t wtext[] = "This is STM32 working with FatFs"; /* File write buffer */
-  //uint8_t rtext[100];
-  int err_code;/* File read buffer */
-  //char stre[20];
-
-  //SERIAL_ECHOLNPGM("MSC_App->entered");
-
+  FRESULT res;  /* FatFs function common result code */
+  int err_code; /* File read buffer */
+  
   /* Register the file system object to the FatFs module */
   if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
   {
@@ -1144,19 +984,12 @@ static void MSC_Application2(void)
     Error_Handler();
   }
   else
-  {
-    //SERIAL_ECHOLNPGM("MSC_App->f_mount");
-
-    /* Create and Open a new text file object with write access */
-    //if(f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
-    //err_code=f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-    //err_code=f_open(&MyFile, "3DB.GCO", FA_READ); //elsan use for test.
-     
+  {	    
+    /* Open a new text file object with write access */         
     err_code=f_open(&MyFile, /*card.filename*/(const char*) &fname2[0], FA_READ);
     
     if(err_code!=FR_OK)
-    {
-      /* 'STM32.TXT' file Open for write Error */
+    {      
       SERIAL_ECHOPGM("MSC_App->f_open:error");
       //sprintf(stre, "%d", err_code);      
       Error_Handler();
@@ -1164,67 +997,7 @@ static void MSC_Application2(void)
     else
     { 
       //SERIAL_ECHOLNPGM("MSC_App->f_open");
-      return; //Elsan only f_open is needed.
-
-      /* Write data to the text file */
-      //res = f_write(&MyFile, wtext, sizeof(wtext), (UINT*)&byteswritten);
-
-      //if((byteswritten == 0) || (res != FR_OK))
-      //{
-        /* 'STM32.TXT' file Write or EOF Error */
-        //Error_Handler();
-      //}
-      //else
-      //{
-        /* Close the open text file */
-        //f_close(&MyFile);
-
-        /* Open the text file object with read access */
-        //if(f_open(&MyFile, "STM32.TXT", FA_READ) != FR_OK)
-        //{
-          /* 'STM32.TXT' file Open for read Error */
-          //Error_Handler();
-        //}
-        //else
-        //{
-          /* Read data from the text file */
-          //res = f_read(&MyFile, rtext, sizeof(rtext), (void *)&bytesread);
-          //res = f_read(&MyFile, rtext, sizeof(rtext),(UINT*) &bytesread);
-
-          //if((bytesread == 0) || (res != FR_OK))
-          //{
-            /* 'STM32.TXT' file Read or EOF Error */
-            //Error_Handler();
-          //}
-          //else
-          //{
-            /* Close the open text file */
-            //f_close(&MyFile);
-
-            /* Compare read data with the expected data */
-            //if((bytesread != byteswritten))
-            //{
-              /* Read data is different from the expected data */
-              //Error_Handler();
-            //}
-            //else
-            //{
-              /* Success of the demo: no error occurrence */
-                    
-              //SERIAL_ECHOPGM((char*)rtext);
-              //SERIAL_ECHOLNPGM("");
-              
-              //SERIAL_ECHOPGM(USBDISKPath);
-              //SERIAL_ECHOLNPGM("");
-
-              //SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
-              //Explore_Disk("0:/", 1);
-              //Explore_Disk2("0:/", 1);
-              //SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
-            //}
-          //}
-        //}
-      //}
+      return; //Elsan only f_open is needed.      
     }
   }
 
@@ -1236,14 +1009,8 @@ static void MSC_Application2(void)
 static void MSC_Application3(void)
 {
   FRESULT res;                                          /* FatFs function common result code */
-  uint32_t byteswritten, bytesread;                     /* File write/read counts */
-  uint8_t wtext[] = "This is STM32 working with FatFs"; /* File write buffer */
-  uint8_t rtext[100];
   int err_code;/* File read buffer */
-  //char stre[20];
-
-  //SERIAL_ECHOLNPGM("MSC_App->entered");
-
+  
   /* Register the file system object to the FatFs module */
   if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
   {
@@ -1252,90 +1019,19 @@ static void MSC_Application3(void)
     Error_Handler();
   }
   else
-  {
-    //SERIAL_ECHOLNPGM("MSC_App->f_mount");
-
-    /* Create and Open a new text file object with write access */
-    //if(f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
-    //err_code=f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-    //err_code=f_open(&MyFile, "3DB.GCO", FA_READ); //elsan use for test.
-     
-    //err_code=f_open(&MyFile, /*card.filename*/(const char*) &fname2[0], FA_READ);
+  {	
+    /* Create and Open a new text file object with write access */    
     err_code=f_open(&MyFile, /*card.filename*/(const char*) &fname2[0], FA_CREATE_ALWAYS | FA_WRITE);
     
     if(err_code!=FR_OK)
     {
-      /* 'STM32.TXT' file Open for write Error */
       SERIAL_ECHOPGM("MSC_App->f_open:error");
-      //sprintf(stre, "%d", err_code);
-      
+      //sprintf(stre, "%d", err_code);      
       Error_Handler();
     }
     else
-    { 
-      //SERIAL_ECHOLNPGM("MSC_App->f_open");
+    {       
       return; //Elsan only f_open is needed.
-
-      /* Write data to the text file */
-      //res = f_write(&MyFile, wtext, sizeof(wtext), (void *)&byteswritten);
-      res = f_write(&MyFile, wtext, sizeof(wtext), (UINT*)&byteswritten);
-
-      if((byteswritten == 0) || (res != FR_OK))
-      {
-        /* 'STM32.TXT' file Write or EOF Error */
-        Error_Handler();
-      }
-      else
-      {
-        /* Close the open text file */
-        f_close(&MyFile);
-
-        /* Open the text file object with read access */
-        if(f_open(&MyFile, "STM32.TXT", FA_READ) != FR_OK)
-        {
-          /* 'STM32.TXT' file Open for read Error */
-          Error_Handler();
-        }
-        else
-        {
-          /* Read data from the text file */
-          //res = f_read(&MyFile, rtext, sizeof(rtext), (void *)&bytesread);
-          res = f_read(&MyFile, rtext, sizeof(rtext),(UINT*) &bytesread);
-
-          if((bytesread == 0) || (res != FR_OK))
-          {
-            /* 'STM32.TXT' file Read or EOF Error */
-            Error_Handler();
-          }
-          else
-          {
-            /* Close the open text file */
-            f_close(&MyFile);
-
-            /* Compare read data with the expected data */
-            if((bytesread != byteswritten))
-            {
-              /* Read data is different from the expected data */
-              Error_Handler();
-            }
-            else
-            {
-              /* Success of the demo: no error occurrence */
-                    
-              //SERIAL_ECHOPGM((char*)rtext);
-              //SERIAL_ECHOLNPGM("");
-              
-              SERIAL_ECHOPGM(USBDISKPath);
-              SERIAL_ECHOLNPGM("");
-
-              SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
-              //Explore_Disk("0:/", 1);
-              Explore_Disk2("0:/", 1);
-              SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
-            }
-          }
-        }
-      }
     }
   }
 
@@ -1346,14 +1042,8 @@ static void MSC_Application3(void)
 static void MSC_Application5(void)
 {
   FRESULT res;                                          /* FatFs function common result code */
-  uint32_t byteswritten, bytesread;                     /* File write/read counts */
-  uint8_t wtext[] = "This is STM32 working with FatFs"; /* File write buffer */
-  uint8_t rtext[100];
   int err_code;/* File read buffer */
-  //char stre[20];
-
-  //SERIAL_ECHOLNPGM("MSC_App->entered");
-
+    
   /* Register the file system object to the FatFs module */
   if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
   {
@@ -1362,91 +1052,20 @@ static void MSC_Application5(void)
     Error_Handler();
   }
   else
-  {
-    //SERIAL_ECHOLNPGM("MSC_App->f_mount");
-
-    /* Create and Open a new text file object with write access */
-    //if(f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK)
-    //err_code=f_open(&MyFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE);
-    //err_code=f_open(&MyFile, "3DB.GCO", FA_READ); //elsan use for test.
-     
-    //err_code=f_open(&MyFile, /*card.filename*/(const char*) &fname2[0], FA_READ);
-    //err_code=f_open(&MyFile, /*card.filename*/(const char*) &fname2[0], FA_CREATE_ALWAYS | FA_WRITE);
+  {	    
+    /* Delete */
     err_code=f_unlink((const char*) &fname2[0]);
     
     if(err_code!=FR_OK)
     {
-      /* 'STM32.TXT' file Open for write Error */
+      /* Error */
       SERIAL_ECHOPGM("MSC_App->f_open:error");
-      //sprintf(stre, "%d", err_code);
-      
+      //sprintf(stre, "%d", err_code);      
       Error_Handler();
     }
     else
-    { 
-      //SERIAL_ECHOLNPGM("MSC_App->f_open");
-      return; //Elsan only f_open is needed.
-
-      /* Write data to the text file */
-      //res = f_write(&MyFile, wtext, sizeof(wtext), (void *)&byteswritten);
-      res = f_write(&MyFile, wtext, sizeof(wtext), (UINT*)&byteswritten);
-
-      if((byteswritten == 0) || (res != FR_OK))
-      {
-        /* 'STM32.TXT' file Write or EOF Error */
-        Error_Handler();
-      }
-      else
-      {
-        /* Close the open text file */
-        f_close(&MyFile);
-
-        /* Open the text file object with read access */
-        if(f_open(&MyFile, "STM32.TXT", FA_READ) != FR_OK)
-        {
-          /* 'STM32.TXT' file Open for read Error */
-          Error_Handler();
-        }
-        else
-        {
-          /* Read data from the text file */
-          //res = f_read(&MyFile, rtext, sizeof(rtext), (void *)&bytesread);
-          res = f_read(&MyFile, rtext, sizeof(rtext),(UINT*) &bytesread);
-
-          if((bytesread == 0) || (res != FR_OK))
-          {
-            /* 'STM32.TXT' file Read or EOF Error */
-            Error_Handler();
-          }
-          else
-          {
-            /* Close the open text file */
-            f_close(&MyFile);
-
-            /* Compare read data with the expected data */
-            if((bytesread != byteswritten))
-            {
-              /* Read data is different from the expected data */
-              Error_Handler();
-            }
-            else
-            {
-              /* Success of the demo: no error occurrence */
-                    
-              //SERIAL_ECHOPGM((char*)rtext);
-              //SERIAL_ECHOLNPGM("");
-              
-              SERIAL_ECHOPGM(USBDISKPath);
-              SERIAL_ECHOLNPGM("");
-
-              SERIAL_ECHOLNPGM(STR_BEGIN_FILE_LIST);
-              //Explore_Disk("0:/", 1);
-              Explore_Disk2("0:/", 1);
-              SERIAL_ECHOLNPGM(STR_END_FILE_LIST);
-            }
-          }
-        }
-      }
+    {       
+      return; //Elsan only f_open is needed.    
     }
   }
 

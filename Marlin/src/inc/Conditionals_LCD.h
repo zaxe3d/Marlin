@@ -450,7 +450,7 @@
 #endif
 
 #if ENABLED(IS_ULTIPANEL)
-  #define ULTIPANEL
+  #define ULTIPANEL 
 #endif
 #if ENABLED(ULTIPANEL)
   #define IS_ULTRA_LCD

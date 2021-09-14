@@ -60,12 +60,12 @@ public:
   #endif
 
   //Elsan
-  //#if ENABLED(FIRST_LAYER_CALIBRATION)
+  #if ENABLED(FIRST_LAYER_CALIBRATION)
     // Hook for first layer calibration option
     static void HandleFirstLayerCalibrationOption(DGUS_VP_Variable &var, void *val_ptr);
     // Hook for first layer calibration
     static void HandleFirstLayerCalibration(DGUS_VP_Variable &var);
-  //#endif
+  #endif
 
   static void HandleGoToCalibrationPoints(DGUS_VP_Variable &var, void *val_ptr);
   static void HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val_ptr);
@@ -78,6 +78,7 @@ public:
   static void HandleManualExtrude(DGUS_VP_Variable &var, void *val_ptr);
   // Hook for motor lock and unlook
   static void HandleMotorLockUnlock(DGUS_VP_Variable &var, void *val_ptr);
+  static void HandleEepromSaveRestoreSettings(DGUS_VP_Variable &var, void *val_ptr);
   static void HandleEndPreheat(DGUS_VP_Variable &var, void *val_ptr);
   #if ENABLED(POWER_LOSS_RECOVERY)
     // Hook for power loss recovery.
@@ -112,6 +113,9 @@ public:
     static void HandlePreheat(DGUS_VP_Variable &var, void *val_ptr);
   #endif
   #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
+    // Hook for filament load confirmation
+    static void HandleFilamentConfirmation(DGUS_VP_Variable &var, void *val_ptr);
+    static void HandleFilamentInit(DGUS_VP_Variable &var, void *val_ptr);
     // Hook for filament load and unload filament option
     static void HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr);
     // Hook for filament load and unload
@@ -201,6 +205,8 @@ public:
   /// Display will get a 4-byte integer scaled to the number of digits:
   /// Tell the display the number of digits and it cheats by displaying a dot between...
   template<unsigned int decimals>
+  //Elsan
+  
   static void DGUSLCD_SendFloatAsLongValueToDisplay(DGUS_VP_Variable &var) {
     if (var.memadr) {
       float f = *(float *)var.memadr;
@@ -208,6 +214,24 @@ public:
       dgusdisplay.WriteVariable(var.VP, (long)f);
     }
   }
+  
+  /*
+  static void DGUSLCD_SendFloatAsLongValueToDisplay(DGUS_VP_Variable &var) {
+    if (var.memadr) {
+      float f = *(float *)var.memadr;
+      f *= cpow(10, decimals);
+      union { long l; char lb[4]; } endian;
+
+      char tmp[4];
+      endian.l = f;
+      tmp[0] = endian.lb[3];
+      tmp[1] = endian.lb[2];
+      tmp[2] = endian.lb[1];
+      tmp[3] = endian.lb[0];
+      dgusdisplay.WriteVariable(var.VP, tmp, 4);
+    }
+  }
+  */
 
   /// Send a float value to the display.
   /// Display will get a 2-byte integer scaled to the number of digits:

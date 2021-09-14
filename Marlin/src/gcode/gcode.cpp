@@ -342,6 +342,10 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
           break;
       #endif
 
+      #if ENABLED(FIRST_LAYER_CALIBRATION)  //Elsan
+        case 40: G40(); break;                                    // G38.2, G38.3: Probe towards target
+      #endif
+
       #if ENABLED(CNC_COORDINATE_SYSTEMS)
         case 53: G53(); break;                                    // G53: (prefix) Apply native workspace
         case 54: G54(); break;                                    // G54: Switch to Workspace 1

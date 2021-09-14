@@ -89,8 +89,8 @@ void HAL_SPI_MspInitTEST(void);
 #include "stm32f4xx_ll_spi.h"
 #include "stm32f4xx_ll_bus.h"
 char buff [50];
-volatile byte indx;
-volatile boolean process;
+//volatile byte indx;
+//volatile boolean process;
 SPI_HandleTypeDef SpiHandle;
 static SPI_HandleTypeDef spi = { .Instance = SPI3 };
 uint8_t aTxBuffer[] = "*SPI*";
@@ -120,6 +120,25 @@ extern char isUSB_fileopen;
 extern char buf_main[50][200];
 extern int print_stat;
 extern int x_pos, y_pos, z_pos;
+//Fan
+int tach_first=1;
+int tach2=0;
+int cntr=0;
+int activity=0;
+int loop_speed=100;
+int first_trig=0;
+int sec_trig=0;
+uint32_t m, m2;
+uint32_t us,us2;
+int tach_first0=1;
+int tach20=0;
+int cntr0=0;
+int activity0=0;
+int loop_speed0=100;
+int first_trig0=0;
+int sec_trig0=0;
+//uint32_t m, m2;
+uint32_t us0,us20;
 
 #define SPIx                             SPI3
 #define SPIx_CLK_ENABLE()                __HAL_RCC_SPI3_CLK_ENABLE()
@@ -338,6 +357,7 @@ bool wait_for_heatup = true;
     if (ms) ms += millis(); // expire time
     while (wait_for_user && !(ms && ELAPSED(millis(), ms)))
       idle(TERN_(ADVANCED_PAUSE_FEATURE, no_sleep));
+      //idle(); //Elsan test
     wait_for_user = false;
   }
 
@@ -1072,7 +1092,7 @@ static void Netif_Config(void)
  *    • Max7219
  */
 void setup() {
-
+    
   tmc_standby_setup();  // TMC Low Power Standby pins must be set early or they're not usable
 
   #if ENABLED(MARLIN_DEV_MODE)
@@ -1211,7 +1231,7 @@ void setup() {
     DWIN_Frame_SetDir(1); // Orientation 90°
     DWIN_UpdateLCD();     // Show bootscreen (first image)
   #else
-    //elsan dis
+  //elsan dis
     SETUP_RUN(ui.init());
     #if HAS_WIRED_LCD && ENABLED(SHOW_BOOTSCREEN)
       SETUP_RUN(ui.show_bootscreen());
@@ -1223,7 +1243,7 @@ void setup() {
   #if BOTH(SDSUPPORT, SDCARD_EEPROM_EMULATION)
     SETUP_RUN(card.mount());          // Mount media with settings before first_load
   #endif
-
+  
   SETUP_RUN(settings.first_load());   // Load data from EEPROM if available (or use defaults)
                                       // This also updates variables in the planner, elsewhere
 
@@ -1450,28 +1470,25 @@ void setup() {
   //USART2->BRR = 729; //Elsan TFT (DGUS) 115200. For board v2.2
   USART2->BRR = 364;
  
-  indx = 0; // buffer empty
-  process = false;
-    
+   //indx = 0; // buffer empty
+   //process = false;
+  /*  
   SpiHandle.Instance               = SPIx;
-  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64; //SPI_BAUDRATEPRESCALER_256; //Elsan ESP12 SPI freq: 656250.
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64; 
   SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
-  SpiHandle.Init.CLKPhase          = /*SPI_PHASE_2EDGE*/SPI_PHASE_1EDGE;
-  SpiHandle.Init.CLKPolarity       = /*SPI_POLARITY_LOW*/SPI_POLARITY_HIGH;
+  SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
+  SpiHandle.Init.CLKPolarity       = SPI_POLARITY_HIGH;
   SpiHandle.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
   SpiHandle.Init.CRCPolynomial     = 7;
-  SpiHandle.Init.DataSize          = /*SPI_DATASIZE_16BIT*/SPI_DATASIZE_8BIT;
+  SpiHandle.Init.DataSize          = SPI_DATASIZE_8BIT;
   SpiHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
-  SpiHandle.Init.NSS               = /*SPI_NSS_HARD_OUTPUT*//*SPI_NSS_HARD_INPUT*/SPI_NSS_SOFT;
-  SpiHandle.Init.TIMode            = /*SPI_TIMODE_ENABLE*/ SPI_TIMODE_DISABLE;
-  
-//#ifdef MASTER_BOARD
+  SpiHandle.Init.NSS               = SPI_NSS_SOFT;
+  SpiHandle.Init.TIMode            = SPI_TIMODE_DISABLE;
   //SpiHandle.Init.Mode = SPI_MODE_MASTER;
-//#else
   SpiHandle.Init.Mode = SPI_MODE_SLAVE;
-//#endif /* MASTER_BOARD */
-
   //HAL_SPI_Init(&SpiHandle);
+  */
+
   //HAL_SPI_MspInitTEST();
   //SPI3->CR1	= 0x0003;	//CPOL=1, CPHA=1
   //SPI3->CR1	|= 1<<6;	      //SPI enabled
@@ -1603,7 +1620,12 @@ HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
   //HAL_GPIO_WritePin(GPIOE, /*GPIO_PIN_5*/GPIO_PIN_14, GPIO_PIN_RESET);  //Elsan USB Host: Handled in USBH_LL_DriverVBUS.  
   
-  //for(int a=0;a<50;a++) memset(&buf_main[a][0],0x00,200); //test
+  SET_INPUT_PULLUP(PD7);  //Elsan FAN1 tach (FG) input;
+  SET_INPUT_PULLUP(PD4);
+  __HAL_RCC_TIM5_CLK_ENABLE();
+  TIM5->PSC = HAL_RCC_GetPCLK1Freq() / 500000;
+  TIM5->CR1 = TIM_CR1_CEN;
+  TIM5->CNT = -10;
 }
 
 
@@ -1769,12 +1791,12 @@ static void MX_GPIO_Init(void)
 
 
 void loop() {
-  unsigned char input[100];
-  uint32_t byteswritten;
+ unsigned char input[100]; 
+ uint32_t byteswritten;
   do {
-
+    
     idle();
-
+    
     #if ENABLED(SDSUPPORT)
       //card.checkautostart();  //Elsan dis
       if (card.flag.abort_sd_printing) {abortSDPrinting(); card.flag.abort_sd_printing=false;} //Elsan change
@@ -1782,9 +1804,9 @@ void loop() {
     #endif
 
     queue.advance();
-
+    
     endstops.event_handler();
-
+    
     TERN_(HAS_TFT_LVGL_UI, printer_state_polling());
 
   } while (ENABLED(__AVR__)); // Loop forever on slower (AVR) boards
@@ -1808,8 +1830,7 @@ void loop() {
    //SERIAL_ECHO("\r\n");
    //SPI3->CR1	|= 3<<8;  //NSS is ignored and Slave disabled.
    //while (HAL_SPI_GetState(&spi) != HAL_SPI_STATE_READY) { }
-
-  //Elsan Temporarily disabled.
+  
   //Wait until print file is closed.
   if(!isUSB_fileopen) {print_stat=0;}
 
@@ -1884,20 +1905,114 @@ jmp:
     } 
     else say=0;
   }  
-  //Temporarily disabled.
-
+  
   //LwIP Webserver
   // Read a received packet from the Ethernet buffers and send it to the lwIP for handling
-  ethernetif_input(&gnetif);
-  // Handle timeouts
-  sys_check_timeouts();
+    ethernetif_input(&gnetif); 
+    // Handle timeouts 
+    sys_check_timeouts();  
 
-  //uint8_t str[] = "1A Hello\r\n";
-  //HAL_UART_Transmit(&huart3,str,sizeof(str),1000);
+#ifdef USE_DHCP
+    /* handle periodic timers for LwIP */
+    DHCP_Periodic_Handle(&gnetif);
+#endif
+
+    //uint8_t str[] = "1A Hello\r\n";  
+    //HAL_UART_Transmit(&huart3,str,sizeof(str),1000);
     
-  x_pos=current_position.x;
-  y_pos=current_position.y;
-  z_pos=current_position.z;
+    x_pos=current_position.x;
+    y_pos=current_position.y;
+    z_pos=current_position.z;
+
+  //Elsan Fan tach (FG) reading.   
+  /* //Elsan dis for test
+  cntr++; //Fan status printing only at certain frequency. 
+  cntr0++;
+  //Elsan more precise reading could be obtained by ISR (interrupt GPIO).
+  int tach=digitalRead(PD7); 
+  //int tach0=digitalRead(PD4); //Moved to Fan0 part. May cause delay here.
+    
+  if((cntr>=loop_speed)&&(tach==LOW)){  //Calculate and print only at certain frequency. Make sure that first tach reading is LOW. 
+    for (unsigned int a=0;a<160000;a++)  { //100.000 ok
+      tach=digitalRead(PD7);
+      //if(!tach_first) {   
+              
+        //if((tach2!=tach)&&(tach==HIGH)&&(first_trig==0)&&(sec_trig==0)) { //First rising edge after LOW signal. 
+        if((tach2!=tach)&&(tach)&&(!first_trig)&&(!sec_trig)) {
+          //activity++; 
+          //m = HAL_GetTick(); 
+          us=TIM5->CNT ;
+          first_trig=1;
+        } 
+        //else if((tach2!=tach)&&(tach==LOW)&&(first_trig==1)&&(sec_trig==0)) { //LOW after HIGH. Then allow measuring.
+        else if((tach2!=tach)&&(!tach)&&(first_trig)&&(!sec_trig)) {
+          //activity++; 
+          //m = HAL_GetTick(); 
+          //us=TIM5->CNT << 1;
+          sec_trig=1;
+        }
+        //else if((tach2!=tach)&&(tach==HIGH)&&(sec_trig==1)) { //HIGH after LOW, measure time difference.
+        else if((tach2!=tach)&&(tach)&&(sec_trig)) {
+          activity++; 
+          //m2 = HAL_GetTick(); 
+          us2=TIM5->CNT ;
+          //SERIAL_ECHOLNPAIR("Freq:",m, "Hz    RPM:",m2);
+          //break;
+        }
+      //}
+      tach2=tach; //Detect state change. LOW to HIGH or HIGH to LOW. 
+      //tach_first=0;
+      if(activity) break;  //Elsan one cycle is enough.
+    }
+    
+    if(activity!=0) {
+        //SERIAL_ECHOLNPGM("\n" "FAN IS RUNNING");  //Give some time for one cycle of the fan.         
+        //SERIAL_ECHOLNPAIR("us:", us, "Hz    us2:", us2);
+        //SERIAL_ECHOLNPAIR("FAN1 tFG:", (us2-us), "us    RPM:",45000000/(us2-us));
+        SERIAL_ECHOLNPAIR("FAN1 tFG:", (us2-us), "us    RPM:",30000000/(us2-us));     //Fan is 2 pole so freq is half of measured one.
+    }
+    //else SERIAL_ECHOLNPGM("\n" "FAN IS STOPPED");
+    cntr=0;
+    activity=0;   
+    tach_first=1; 
+    tach2=0; 
+    first_trig=0;
+    sec_trig=0;
+  }
+
+  //Elsan FAN0
+  int tach0=digitalRead(PD4);
+  if((cntr0>=loop_speed)&&(tach0==LOW)){  //Calculate and print only at certain frequency. Make sure that first tach reading is LOW.   
+    for (int a=0;a<100000;a++)  { //100.000 ok
+      tach0=digitalRead(PD4);
+      if((tach20!=tach0)&&(tach0==HIGH)&&(first_trig0==0)&&(sec_trig0==0)) { //First rising edge after LOW signal.             
+        us0=TIM5->CNT << 1;
+        first_trig0=1;
+      } 
+      else if((tach20!=tach0)&&(tach0==LOW)&&(first_trig0==1)&&(sec_trig0==0)) { //LOW after HIGH. Then allow measuring.          
+        sec_trig0=1;
+      }
+      else if((tach20!=tach0)&&(tach0==HIGH)&&(sec_trig0==1)) { //HIGH after LOW, measure time difference.
+        activity0++;           
+        us20=TIM5->CNT << 1;          
+      }      
+      tach20=tach0;
+      tach_first0=0;
+      if(activity0>=1) break;  //Elsan one cycle is enough.
+    }    
+    if(activity0!=0) {        
+      //SERIAL_ECHOLNPAIR("FAN0 tFG:", (us20-us0), "us    RPM:",83500000/(us20-us0));
+      SERIAL_ECHOLNPAIR("FAN0 tFG:", (us20-us0), "us    RPM:",60000000/(us20-us0));     //"TIM5->CNT << 1" is multiplied by 2. Fan is 2 pole so freq is half of measured one.
+    }    
+    cntr0=0;
+    activity0=0;   
+    tach_first0=1; 
+    tach20=0; 
+    first_trig0=0;
+    sec_trig0=0;
+  } 
+  */  //Elsan dis for test  
+
 }
 
 

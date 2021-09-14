@@ -34,10 +34,10 @@
 #endif
 
 #ifndef BOARD_INFO_NAME
-  #define BOARD_INFO_NAME "Black STM32F4VET6"
+  #define BOARD_INFO_NAME "Xboard" //"Black STM32F4VET6"
 #endif
 
-#define DEFAULT_MACHINE_NAME "STM32F407VGT6"
+#define DEFAULT_MACHINE_NAME "Xlite+" //"STM32F407VGT6"
 
 //#define I2C_EEPROM
 //#define SRAM_EEPROM_EMULATION
@@ -129,8 +129,8 @@
 #define HEATER_BED_PIN                      PB4//PB0//PB1//PA1   // Hotbed
 
 //Elsan: Normally drives mosfet. We used it to control PWM (4 wire).
-#define FAN_PIN                             PB9//PE11//PE9   // Fan0
-#define FAN1_PIN                            PB8//PE9//PE11  // Fan1
+#define FAN_PIN                             PB8 //PB9//PE11//PE9   // Fan0
+#define FAN1_PIN                            PB9 //PB8//PE9//PE11   // Fan1
 //#define FAN2_PIN                            PE13  // Fan2
 //#define FAN3_PIN                            PE14  // Fan3
 

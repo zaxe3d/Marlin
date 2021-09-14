@@ -208,7 +208,10 @@ namespace ExtUI {
   }
 
   //Elsan
-  
+  uint8_t getMaterialType() {
+    return material.type;
+  }
+
   float getMaterialCustomExtTemp() {
     return _MAX(material.custom_temp.ext, 180);    
   }
@@ -329,10 +332,25 @@ namespace ExtUI {
     return TERN_(JOYSTICK, flags.jogging ? destination[axis] :) current_position[axis];
   }
 
+  /*
   float getAxisPosition_mm(const extruder_t extruder) {
     const extruder_t old_tool = getActiveTool();
     setActiveTool(extruder, true);
     const float epos = TERN_(JOYSTICK, flags.jogging ? destination.e :) current_position.e;
+    setActiveTool(old_tool, true);
+    return epos;
+  }
+  */
+  //Elsan
+  float getAxisPosition_mm(const extruder_t extruder) {
+    const extruder_t old_tool = getActiveTool();
+    setActiveTool(extruder, true);
+    const float epos = (
+      #if ENABLED(JOYSTICK)
+        flags.jogging ? destination.e :
+      #endif
+      current_position.e
+    );
     setActiveTool(old_tool, true);
     return epos;
   }
@@ -363,6 +381,10 @@ namespace ExtUI {
   }
 
   //Elsan
+  void setMaterialType(const uint8_t type) {
+    material.type = type;
+  }
+
   void setCurrentExtruderPosition_mm(const float position) {
     current_position.e = position;
     sync_plan_position_e();

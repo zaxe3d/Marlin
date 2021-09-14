@@ -1512,7 +1512,8 @@ void MarlinUI::update() {
 
     #if ENABLED(PARK_HEAD_ON_PAUSE)
       TERN_(HAS_WIRED_LCD, lcd_pause_show_message(PAUSE_MESSAGE_PARKING, PAUSE_MODE_PAUSE_PRINT)); // Show message immediately to let user know about pause in progress
-      queue.inject_P(PSTR("M25 P\nM24"));
+      queue.inject_P(PSTR("M25 P\nM24")); 
+      //queue.inject_P(PSTR("M25 P")); //Elsan test
     #elif ENABLED(SDSUPPORT)
       queue.inject_P(PSTR("M25"));
     #elif defined(ACTION_ON_PAUSE)

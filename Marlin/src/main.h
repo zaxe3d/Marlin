@@ -39,7 +39,8 @@
 //#define USE_IAP_TFTP   /* enable IAP using TFTP */
 #define USE_IAP_HTTP   /* enable IAP using HTTP */
 //#define USE_LCD        /* enable LCD  */
-//#define USE_DHCP       /* enable DHCP, if disabled static address is used */
+//#define USE_DHCP       /* enable DHCP, if disabled static address is used */ //Elsan worked with disabled DHCP.
+#define USE_DHCP
 
 /* Flash user area definition *************************************************/   
 /* 
@@ -66,7 +67,7 @@
 /* Static IP Address definition ***********************************************/
 #define IP_ADDR0   (uint8_t) 192
 #define IP_ADDR1   (uint8_t) 168
-#define IP_ADDR2   (uint8_t) 1//0
+#define IP_ADDR2   (uint8_t) 1 //0
 #define IP_ADDR3   (uint8_t) 118//10
 
 /* NETMASK definition *********************************************************/
@@ -78,7 +79,7 @@
 /* Gateway Address definition *************************************************/
 #define GW_ADDR0   (uint8_t) 192
 #define GW_ADDR1   (uint8_t) 168
-#define GW_ADDR2   (uint8_t) 1//0
+#define GW_ADDR2   (uint8_t) 1 //0
 #define GW_ADDR3   (uint8_t) 1
 
 /* Exported macro ------------------------------------------------------------*/

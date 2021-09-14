@@ -224,6 +224,8 @@ namespace ExtUI {
 
   float getMaterialCustomExtTemp(); //Elsan
   float getMaterialCustomBedTemp(); //Elsan
+  void setMaterialType(const uint8_t); //Elsan
+  uint8_t getMaterialType();  //Elsaan
 
   #if HAS_BED_PROBE
     float getProbeOffset_mm(const axis_t);

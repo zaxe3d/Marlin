@@ -16,32 +16,27 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
-#include "../../inc/MarlinConfig.h"
-#include "../../lcd/extui/lib/dgus/fysetc/DGUSDisplayDef.h" //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h"
-
-extern DGUSScreenHandler ScreenHandler; //Elsan
-
-#if ENABLED(SDSUPPORT)
-
-#include "../gcode.h"
-#include "../../sd/cardreader.h"
-
 /**
- * M524: Abort the current SD print job (started with M24)
+ * module/material.cpp
  */
-void GcodeSuite::M524() {
 
-  if (IS_SD_PRINTING())
-    card.flag.abort_sd_printing = true;
-  else if (/*card.isMounted()*/1)
-    card.closefile();
-  
-  ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);  //Elsan DGUS screen not updated after abort from XDesktop.
-}
+#include "../inc/MarlinConfig.h"
 
-#endif // SDSUPPORT
+#include "material.h"
+
+#include "../MarlinCore.h" // for stop(), disable_e_steppers, wait_for_user
+
+#if ENABLED(EXTENSIBLE_UI)
+  #include "../lcd/extui/ui_api.h"
+#endif
+
+//Material material;
+
+// Below items initialized by settings.load()
+uint8_t Material::type;
+Material::custom_temp_t Material::custom_temp;
+

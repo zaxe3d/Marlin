@@ -39,12 +39,15 @@
 #include "../../../../libs/duration_t.h"
 #include "../../../../module/printcounter.h"
 
+#include "../../module/settings.h"  //Elsan
+#include "../../../gcode/gcode.h"
 void usb_ls2(void);
 void prnt_els2(char * str);
 extern char buf_main[50][200];
 int file_cnt3=0;
 extern int file_cnt2, file_cnt;
 extern int print_percent;
+extern GcodeSuite gcode;  //Elsan
 
 #if ENABLED(POWER_LOSS_RECOVERY)
   #include "../../../../feature/powerloss.h"
@@ -443,14 +446,15 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
       case 0:  // Resume
         //SERIAL_ECHOLNPGM("DGUSLCD_SD_Resume");
         //if (ExtUI::isPrintingFromMediaPaused()) ExtUI::resumePrint();
-        queue.inject_P(PSTR("M24"));  //Elsan
+        ExtUI::resumePrint(); //Elsan do we really need isPrintingFromMediaPaused?
+        //queue.inject_P(PSTR("M24"));  //Elsan working without ADVANCED_PAUSE_FEATURE
         break;
       case 1:  // Pause
         //if (!ExtUI::isPrintingFromMediaPaused()) ExtUI::pausePrint();
-        queue.inject_P(PSTR("M25"));  //Elsan
+        ExtUI::pausePrint();
+        //queue.inject_P(PSTR("M25"));  //Elsan working without ADVANCED_PAUSE_FEATURE
         break;
-      case 2:  // Abort  
-        //prnt_els2("DGUSLCD_SD_ResumePauseAbort case:2");           
+      case 2:  // Abort                    
         ScreenHandler.HandleUserConfirmationPopUp(VP_SD_AbortPrintConfirmed, nullptr, PSTR("Abort printing"), /*filelist.filename()*/buf_main[file_to_print+file_cnt3], PSTR("?"), true, true, false, true);
         break;
       case 3:  // Change filament
@@ -757,6 +761,16 @@ void DGUSScreenHandler::HandleManualMove(DGUS_VP_Variable &var, void *val_ptr) {
   return;
 }
 
+void DGUSScreenHandler::HandleEepromSaveRestoreSettings(DGUS_VP_Variable &var, void *val_ptr) {
+  DEBUG_ECHOLNPGM("HandleEepromSaveRestoreSettings");
+
+  char buf[5];
+  const int16_t val = swap16(*(uint16_t*)val_ptr);
+  strcpy_P(buf, val ? PSTR("M500") : PSTR("M501"));
+
+  queue.enqueue_one_now(buf);
+}
+
 void DGUSScreenHandler::HandleEndPreheat(DGUS_VP_Variable &var, void *val_ptr) {
   DEBUG_ECHOLNPGM("HandleEndPreheat");
 
@@ -1043,15 +1057,19 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     ExtUI::extruder_t extruder; // which extruder to operate
     uint8_t action; // load or unload
     uint8_t target_temp; // accepted target temp  //Elsan
+    uint8_t material_type;  //Elsan
     bool heated; // heating done ?
     float purge_length; // the length to extrude before unload, prevent filament jam
     float processed_length; //Elsan
     xyze_pos_t resume_position; //Elsan
+    bool waiting_confirmation;  //Elsan
   } filament_data_t;
 
   static filament_data_t filament_data;
   static filament_data_t calibration_data;  //Elsan from old version
 
+  //Elsan new version
+  /*
   void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM("HandleFilamentOption");
 
@@ -1121,7 +1139,89 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
       GotoScreen(DGUSLCD_SCREEN_FILAMENT_HEATING);
     }
   }
+  */
 
+  //Elsan old version from Xlite.
+  void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
+    DEBUG_ECHOLNPGM("HandleFilamentOption");
+
+    uint8_t e_temp = 0;
+    filament_data.heated = false;
+    filament_data.processed_length = 0;
+    filament_data.waiting_confirmation = false;
+    uint16_t preheat_option = swap16(*(uint16_t*)val_ptr);
+    if (preheat_option <= 8)          // Load filament type
+      filament_data.action = 1;
+    else if (preheat_option >= 20) {  // Purge filament type
+      preheat_option = ExtUI::getMaterialType(); // get from eeprom
+      filament_data.action = 3;
+    } else if (preheat_option >= 10) {  // Unload filament type
+      preheat_option = ExtUI::getMaterialType(); // get from eeprom
+      filament_data.action = 2;
+      filament_data.purge_length = DGUS_FILAMENT_PURGE_LENGTH;
+
+      queue.inject_P(PSTR("G92 E0"));     //Elsan reset E motor position.
+    } else                              // Cancel filament operation
+      filament_data.action = 0;
+
+    switch (preheat_option) {
+      case 0: // Load PLA
+        e_temp = PREHEAT_PLA_HOTEND;
+        filament_data.material_type = 0;
+        break;
+      case 1: // Load ABS
+        e_temp = PREHEAT_ABS_HOTEND;
+        filament_data.material_type = 1;
+        break;
+      case 2: // Load PET
+        e_temp = PREHEAT_PETG_HOTEND;
+        filament_data.material_type = 2;
+        break;
+      case 3: // Load FLEX
+        e_temp = PREHEAT_FLEX_HOTEND;
+        filament_data.material_type = 3;
+        break;
+      case 7: // Load Custom
+        filament_data.material_type = 7;
+        e_temp = ExtUI::getMaterialCustomExtTemp();
+        break;
+      case 9: // Cool down
+      default:
+        e_temp = 0;
+        break;
+    }
+
+    if (filament_data.action == 0) { // Go back to utility screen
+      #if HOTENDS >= 1
+        thermalManager.setTargetHotend(e_temp, ExtUI::extruder_t::E0);
+      #endif
+      #if HOTENDS >= 2
+        thermalManager.setTargetHotend(e_temp, ExtUI::extruder_t::E1);
+      #endif
+      GotoScreen(DGUSLCD_SCREEN_UTILITY);
+    } else { // Go to the preheat screen to show the heating progress
+      switch (var.VP) {
+        default: return;
+        #if HOTENDS >= 1
+          case VP_E0_FILAMENT_LOAD_UNLOAD:
+            filament_data.extruder = ExtUI::extruder_t::E0;
+            thermalManager.setTargetHotend(e_temp, filament_data.extruder);
+            break;
+        #endif
+        #if HOTENDS >= 2
+          case VP_E1_FILAMENT_LOAD_UNLOAD:
+            filament_data.extruder = ExtUI::extruder_t::E1;
+            thermalManager.setTargetHotend(e_temp, filament_data.extruder);
+          break;
+        #endif
+      }
+      filament_data.target_temp = thermalManager.temp_hotend[filament_data.extruder].target;
+      GotoScreen(DGUSLCD_SCREEN_FILAMENT_HEATING);
+    }
+  }
+
+  //Elsan new version.  
+  /*
   void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
     DEBUG_ECHOLNPGM("HandleFilamentLoadUnload");
     if (filament_data.action <= 0) return;
@@ -1150,6 +1250,79 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
         }
         else
           movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) - movevalue;
+      }
+      ExtUI::setAxisPosition_mm(movevalue, filament_data.extruder);
+    }
+  }
+  */
+
+  //Elsan version from previous Xlite.
+  void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
+    DEBUG_ECHOLNPGM("HandleFilamentLoadUnload");
+    if (filament_data.action <= 0 || filament_data.waiting_confirmation) return;
+
+    if (thermalManager.temp_hotend[filament_data.extruder].celsius >= filament_data.target_temp ||
+        filament_data.heated) { // meaning if already got pass this check don't bother checking anymore!
+      float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME * 3;
+
+      if (((filament_data.action == 1 || filament_data.action == 2) && filament_data.processed_length > DGUS_FILAMENT_END_AFTER) ||
+          (filament_data.action == 3 && filament_data.processed_length > DGUS_FILAMENT_PURGE_END_AFTER)) { // stop loading/unloading after...
+        if (filament_data.action == 1 || filament_data.action == 3) { // if loading filament or purging
+          filament_data.waiting_confirmation = true;
+          // If the user won't confirm filament loading will continue on slow phase
+          filament_data.processed_length = filament_data.action == 3
+            ? 0 // Purge resets
+            : DGUS_FILAMENT_LOAD_SLOW_AFTER + 1; // load
+
+          GotoScreen(DGUSLCD_SCREEN_FILAMENT_CONFIRM);
+          return; // will go to confirm no need to continue...
+        }
+
+        // user confirmed color... end...
+        filament_data.action = 0;
+        #if HOTENDS >= 1
+          thermalManager.setTargetHotend(0, ExtUI::extruder_t::E0);
+        #endif
+        #if HOTENDS >= 2
+          thermalManager.setTargetHotend(0, ExtUI::extruder_t::E1);
+        #endif
+
+        //filament_data.processed_length=0; //Elsan
+        //filament_data.purge_length = 0;   //Elsan
+        //queue.inject_P(PSTR("G92 E0"));     //Elsan reset E motor position.
+        GotoScreen(DGUSLCD_SCREEN_UTILITY);
+        return;
+      }
+
+      // we are ready set heated and go to loading screen...
+      if (!filament_data.heated) {
+        filament_data.heated = true;
+        if (filament_data.action == 1) { // we are saving type if loading...
+          ExtUI::setMaterialType(filament_data.material_type);
+          (void)settings.save(); // save filament type to eeprom //Elsan do we need this?
+        }
+      }
+
+      if (filament_data.action == 1) { // load filament
+        GotoScreen(DGUSLCD_SCREEN_FILAMENT_LOADING);
+        if (filament_data.processed_length > DGUS_FILAMENT_LOAD_SLOW_AFTER) movevalue /= 4; // slower after...
+        filament_data.processed_length += movevalue; // keep track of length
+        movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) + movevalue;
+      } else if (filament_data.action == 3) { // purge filament
+        GotoScreen(DGUSLCD_SCREEN_FILAMENT_LOADING);
+        movevalue /= 4; // slow always while purging and a bit more slower...
+        filament_data.processed_length += movevalue; // keep track of length
+        movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) + movevalue;
+      } else { // unload filament
+        // Before unloading extrude to prevent jamming
+        GotoScreen(DGUSLCD_SCREEN_FILAMENT_UNLOADING);
+        if (filament_data.purge_length >= 0) {
+          movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) + movevalue;
+          filament_data.purge_length -= movevalue;
+        } else {
+          filament_data.processed_length += movevalue; // keep track of length
+          movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) - movevalue;
+        }
       }
       ExtUI::setAxisPosition_mm(movevalue, filament_data.extruder);
     }
@@ -1223,7 +1396,7 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
 
 //Elsan
 
-//#if ENABLED(FIRST_LAYER_CALIBRATION)
+#if ENABLED(FIRST_LAYER_CALIBRATION)
   void DGUSScreenHandler::HandleFirstLayerCalibrationOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM("HandleFirstLayerCalibrationOption");
     UNUSED(var);
@@ -1286,7 +1459,20 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
       calibration_data.action = 0; // Do this once
     }
   }
-//#endif
+#endif
+
+//Elsan
+void DGUSScreenHandler::HandleFilamentConfirmation(DGUS_VP_Variable &var, void *val_ptr) {
+    UNUSED(var); UNUSED(val_ptr);
+    filament_data.waiting_confirmation = false;
+}
+
+void DGUSScreenHandler::HandleFilamentInit(DGUS_VP_Variable &var, void *val_ptr) {
+    UNUSED(var); UNUSED(val_ptr);
+    queue.inject_P(PSTR("G28 O\nG90\nG1 X10 Y0 Z100 F4200"));
+    // No need to move home. Just go up 30
+    //queue.inject_P(PSTR("G91\nG1 Z30 F4200\nG90"));
+  }
 
 void DGUSScreenHandler::HandleGoToCalibrationPoints(DGUS_VP_Variable &var, void *val_ptr) {
   DEBUG_ECHOLNPGM("HandleGoToCalibrationPoints");
@@ -1297,7 +1483,7 @@ void DGUSScreenHandler::HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val
   DEBUG_ECHOLNPGM("HandleGoToMaximumPoints");
 
   char buf[32] = {0};
-
+  /*
   queue.inject_P(PSTR("G28"));
   sprintf(buf, "G1 Z%d F4200", Z_MAX_POS);
   queue.enqueue_one_now(buf);
@@ -1305,10 +1491,41 @@ void DGUSScreenHandler::HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val
   queue.enqueue_one_now(buf);
   sprintf(buf, "G1 X%d Y%d F4200", 0, Y_BED_SIZE);
   queue.enqueue_one_now(buf);
-  sprintf(buf, "G1 X%d Y%d FF4200", X_BED_SIZE, Y_BED_SIZE);
+  sprintf(buf, "G1 X%d Y%d F4200", X_BED_SIZE, Y_BED_SIZE);
   queue.enqueue_one_now(buf);
   sprintf(buf, "G1 X%d Y%d Z5 F4200", X_BED_SIZE, 0);
   queue.enqueue_one_now(buf);
+  */
+
+  queue.inject_P(PSTR("G28"));
+  //queue.enqueue_one_now(PSTR("G28")); //Elsan
+  
+  sprintf(buf, "G0 Z%d F4200", Z_MAX_POS);
+  queue.enqueue_one_now(buf);
+  
+  sprintf(buf, "G0 X%d Y%d F4200", 0, 0);
+  queue.enqueue_one_now(buf);
+  
+  sprintf(buf, "G0 X%d Y%d F4200", 0, Y_BED_SIZE);  //Works
+  //snprintf_P(buf, 32, PSTR("G0 X%d Y%d F4200"), 0, Y_BED_SIZE);
+  queue.enqueue_one_now(buf);
+  
+  buf[0]=0;
+  sprintf(buf, "G0 X%d Y%d F4200", X_BED_SIZE, Y_BED_SIZE);
+  queue.enqueue_one_now(buf); //Crash
+  //queue.enqueue_one_P(buf);
+  //gcode.process_subcommands_now_P(buf); //problematic
+  //queue.enqueue_one_now(PSTR("G0 X190 Y190 F4200"));  //Works  
+  //HAL_Delay(100); //Test
+  
+  buf[0]=0;
+  //sprintf(buf, "G0 X%d Y%d Z5 F4200", X_BED_SIZE, 0);
+  //queue.enqueue_one_now(buf); //Crash
+  //queue.enqueue_one_P(buf);
+  //queue.enqueue_now_P(buf); //Crash
+  //queue.inject_P(buf);
+  //queue.inject_P(PSTR("G0 X190 Y190 Z5 F4200"));  //Bad
+  //queue.enqueue_one_now(PSTR("G0 X190 Y190 Z5 F4200")); //Disable for the time being. It seems that queue is not enough.
 }
 
 bool fanStatus = false;

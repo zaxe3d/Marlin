@@ -826,8 +826,8 @@ static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS
     #error "FILAMENT_RUNOUT_SENSOR requires SDSUPPORT or PRINTJOB_TIMER_AUTOSTART."
   #elif FILAMENT_RUNOUT_DISTANCE_MM < 0
     #error "FILAMENT_RUNOUT_DISTANCE_MM must be greater than or equal to zero."
-  //#elif DISABLED(ADVANCED_PAUSE_FEATURE)
-    //static_assert(nullptr == strstr(FILAMENT_RUNOUT_SCRIPT, "M600"), "ADVANCED_PAUSE_FEATURE is required to use M600 with FILAMENT_RUNOUT_SENSOR.");
+  #elif DISABLED(ADVANCED_PAUSE_FEATURE)
+    static_assert(nullptr == strstr(FILAMENT_RUNOUT_SCRIPT, "M600"), "ADVANCED_PAUSE_FEATURE is required to use M600 with FILAMENT_RUNOUT_SENSOR.");
   #endif
 #endif
 

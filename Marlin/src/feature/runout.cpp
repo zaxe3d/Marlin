@@ -132,9 +132,9 @@ void event_filament_runout() {
     SERIAL_EOL();
   #endif // HOST_ACTION_COMMANDS
 
-  //elsan dis
-  //if (run_runout_script)
-    //queue.inject_P(PSTR(FILAMENT_RUNOUT_SCRIPT));
+  //Elsan dis temporarily, now active again.
+  if (run_runout_script)
+    queue.inject_P(PSTR(FILAMENT_RUNOUT_SCRIPT));
 }
 
 #endif // HAS_FILAMENT_SENSOR

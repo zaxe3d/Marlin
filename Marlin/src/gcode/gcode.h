@@ -475,6 +475,10 @@ private:
 
   TERN_(G38_PROBE_TARGET, static void G38(const int8_t subcode));
 
+  #if ENABLED(FIRST_LAYER_CALIBRATION)  //Elsan
+    static void G40();
+  #endif
+
   TERN_(HAS_MESH, static void G42());
 
   #if ENABLED(CNC_COORDINATE_SYSTEMS)

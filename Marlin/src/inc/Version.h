@@ -25,7 +25,7 @@
  * Release version. Leave the Marlin version or apply a custom scheme.
  */
 #ifndef SHORT_BUILD_VERSION
-  #define SHORT_BUILD_VERSION "2.0.7.2"
+  #define SHORT_BUILD_VERSION "1.0.0" //"2.0.7.2" //Elsan FW version.
 #endif
 
 /**
@@ -33,7 +33,7 @@
  * vendor name, download location, GitHub account, etc.
  */
 #ifndef DETAILED_BUILD_VERSION
-  #define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
+  #define DETAILED_BUILD_VERSION STRING_CONFIG_H_AUTHOR " " MACHINE_NAME " v" SHORT_BUILD_VERSION " (Marlin2.0.7.2) LCD FW:1.0.0" //SHORT_BUILD_VERSION
 #endif
 
 /**
@@ -73,7 +73,7 @@
  * Define a generic printer name to be output to the LCD after booting Marlin.
  */
 #ifndef MACHINE_NAME
-  #define MACHINE_NAME "3D Printer"
+  #define MACHINE_NAME "Xlite+" //"3D Printer"
 #endif
 
 /**

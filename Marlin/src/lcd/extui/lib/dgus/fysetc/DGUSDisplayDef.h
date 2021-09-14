@@ -22,38 +22,42 @@
 #pragma once
 
 enum DGUSLCD_Screens : uint8_t {
-  DGUSLCD_SCREEN_BOOT                =   0,
-  DGUSLCD_SCREEN_MOVEMENT_X          =  62, //Elsan
-  DGUSLCD_SCREEN_MOVEMENT_Y          =  63, //Elsan
-  DGUSLCD_SCREEN_MOVEMENT_Z          =  64, //Elsan
-  DGUSLCD_SCREEN_MOVEMENT_E          =  65, //Elsan
-  DGUSLCD_SCREEN_FIRST_LAYER_CAL     =  32, //Elsan
+  DGUSLCD_SCREEN_BOOT                =   0,  
   DGUSLCD_SCREEN_MAIN                =   1,
   DGUSLCD_SCREEN_STATUS              =   1,
   DGUSLCD_SCREEN_STATUS2             =   1,
   DGUSLCD_SCREEN_TEMPERATURE         =  10,
-  DGUSLCD_SCREEN_PREHEAT             =  18,
+  DGUSLCD_SCREEN_PREHEAT             =  12 /*18*/, //Elsan
   DGUSLCD_SCREEN_CALIBRATION         =  30, //Elsan
+  DGUSLCD_SCREEN_FIRST_LAYER_CAL     =  32, //Elsan
   DGUSLCD_SCREEN_CALIBRATION_HEATING =  38, //Elsan
-  DGUSLCD_SCREEN_POWER_LOSS          = 100,
+  DGUSLCD_SCREEN_MOVEMENT_X          =  62, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_Y          =  63, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_Z          =  64, //Elsan
+  DGUSLCD_SCREEN_MOVEMENT_E          =  65, //Elsan
+  DGUSLCD_SCREEN_POWER_LOSS          = 248 /*100*/,
   DGUSLCD_SCREEN_MANUALMOVE          = 192,
-  DGUSLCD_SCREEN_UTILITY             = 120,  
+  DGUSLCD_SCREEN_UTILITY             =  20 /*120*/, //Elsan
+  DGUSLCD_SCREEN_SDUTILITY           =  22, //Elsan  
   DGUSLCD_SCREEN_SD_FILAMENT_LOAD    =  23,
   DGUSLCD_SCREEN_SD_FILAMENT_UNLOAD  =  24,
   DGUSLCD_SCREEN_SD_FILAMENT_RUNOUT  =  25,
-  DGUSLCD_SCREEN_FILAMENT_HEATING    = 146,
-  DGUSLCD_SCREEN_FILAMENT_LOADING    = 148,
-  DGUSLCD_SCREEN_FILAMENT_UNLOADING  = 158,
+  DGUSLCD_SCREEN_FILAMENT_CONFIRM    =  26, //Elsan
+  DGUSLCD_SCREEN_FILAMENT_HEATING    = 106 /*146*/, //Elsan
+  DGUSLCD_SCREEN_FILAMENT_LOADING    = 108 /*148*/,
+  DGUSLCD_SCREEN_FILAMENT_UNLOADING  = 117 /*158*/,
   DGUSLCD_SCREEN_MANUALEXTRUDE       = 160,
-  DGUSLCD_SCREEN_SDFILELIST          =  202/*71*/,  //Elsan
-  DGUSLCD_SCREEN_SDPRINTMANIPULATION =  204/*73*/,
+  DGUSLCD_SCREEN_SDFILELIST          = 202 /*71*/,  //Elsan
+  DGUSLCD_SCREEN_SDPRINTMANIPULATION = 204 /*73*/,
   DGUSLCD_SCREEN_SDPRINTPAUSED       = 206,
-  DGUSLCD_SCREEN_SDPRINTTUNE         =  75,
-  DGUSLCD_SCREEN_SDUTILITY           =  22, //Elsan
-  DGUSLCD_SCREEN_SDPRINT_DONE        = 216, //Elsan
-  DGUSLCD_SCREEN_FLC_PREHEAT         =  94,
-  DGUSLCD_SCREEN_FLC_PRINTING        =  96,
   DGUSLCD_SCREEN_SDPRINTTUNE_ZOFFSET = 211,
+  DGUSLCD_SCREEN_SDPRINTTUNE_SPEED   = 212,
+  DGUSLCD_SCREEN_SDPRINTTUNE_TEMP    = 213,
+  DGUSLCD_SCREEN_SDPRINTTUNE_FAN     = 214,
+  DGUSLCD_SCREEN_SDPRINT_DONE        = 216, //Elsan
+  DGUSLCD_SCREEN_SDPRINTTUNE         =  75,  
+  DGUSLCD_SCREEN_FLC_PREHEAT         =  94,
+  DGUSLCD_SCREEN_FLC_PRINTING        =  96,  
   DGUSLCD_SCREEN_STEPPERMM           = 212,
   DGUSLCD_SCREEN_PID_E               = 214,
   DGUSLCD_SCREEN_PID_BED             = 218,
@@ -129,11 +133,11 @@ constexpr uint16_t VP_MOVE_E1 = 0x2112;
 //constexpr uint16_t VP_MOVE_E5 = 0x211A;
 constexpr uint16_t VP_HOME_ALL = 0x2120;
 constexpr uint16_t VP_MOTOR_LOCK_UNLOK = 0x2130;
-
+constexpr uint16_t VP_EEPROM_SAVE_RESTORE_SETTINGS = 0x2132;
+constexpr uint16_t VP_END_PREHEAT = 0x2134; //Elsan
 constexpr uint16_t VP_MAX_POINTS = 0x2136;  //Elsan
 constexpr uint16_t VP_CALIBRATION_POINTS = 0x2138;  //Elsan
 constexpr uint16_t VP_FAN_ON_OFF = 0x2140;  //Elsan
-constexpr uint16_t VP_END_PREHEAT = 0x2134; //Elsan
 
 // Power loss recovery
 constexpr uint16_t VP_POWER_LOSS_RECOVERY = 0x2180;
@@ -165,9 +169,13 @@ constexpr uint16_t VP_E1_BED_PREHEAT = 0x2222;
 constexpr uint16_t VP_FIRST_LAYER_CALIBRATION = 0x2296;
 
 // Filament load and unload
+constexpr uint16_t VP_FILAMENT_LOAD_UNLOAD_INIT = 0x2298; // 1 to go to park position before loading/unloading //Elsan
 constexpr uint16_t VP_E0_FILAMENT_LOAD_UNLOAD = 0x2300;
 constexpr uint16_t VP_E1_FILAMENT_LOAD_UNLOAD = 0x2302;
 constexpr uint16_t VP_E0_FILAMENT_SD_LOAD_UNLOAD = 0x2304;
+constexpr uint16_t VP_E1_FILAMENT_SD_LOAD_UNLOAD = 0x2306;
+
+constexpr uint16_t VP_FILAMENT_LOAD_UNLOAD_CONFIRMATION = 0x2308;
 
 // Settings store , reset
 constexpr uint16_t VP_SETTINGS = 0x2400;
@@ -189,7 +197,7 @@ constexpr uint16_t VP_Z_FIRST_LAYER_CAL = 0x2500; // Data: 0 - Cancel first laye
 
 // Firmware version on the boot screen.
 constexpr uint16_t VP_MARLIN_VERSION = 0x3000;
-constexpr uint8_t VP_MARLIN_VERSION_LEN = 16;   // there is more space on the display, if needed.
+constexpr uint8_t VP_MARLIN_VERSION_LEN = 48 /*16*/;   // there is more space on the display, if needed.
 
 // Place for status messages.
 constexpr uint16_t VP_M117 = 0x3020;
