@@ -22,8 +22,12 @@
 #include "usbh_core.h"
 
 //#include "../../../../core/serial.h"  //Elsan
+//#include "../../../../gcode/queue.h"          //Elsan
+//extern GCodeQueue queue;  //Elsan
 
 int prnt(char *ptr, int len);
+void prnt_els3(char * str);
+char noUSB=1; //Elsan assume no USB at startup.
 
 /** @addtogroup USBH_LIB
   * @{
@@ -489,6 +493,10 @@ USBH_StatusTypeDef  USBH_Process(USBH_HandleTypeDef *phost)
       {
         USBH_UsrLog("USB Device Connected");
         //prnt_els("USB Device Connected");
+        //SERIAL_ECHOPGM("USB Connected");
+        //queue.inject_P(PSTR("M118 P2 USB Connected"));
+        //prnt_els3("USB Connected");
+        noUSB=0;
 
         /* Wait for 200 ms after connection */
         phost->gState = HOST_DEV_WAIT_FOR_ATTACHMENT;
@@ -781,6 +789,7 @@ USBH_StatusTypeDef  USBH_Process(USBH_HandleTypeDef *phost)
     case HOST_DEV_DISCONNECTED :
     	//prnt_els("HOST_DEV_DISCONNECTED");
       //SERIAL_ECHOLN("USB test"); //Elsan
+      noUSB=1;
 
       phost->device.is_disconnected = 0U;
 

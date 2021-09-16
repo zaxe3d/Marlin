@@ -45,6 +45,7 @@ void usb_ls(void);
 void prnt_els2(char * str); //Elsan for c++ files.
 static void MSC_Application3(void);
 static void MSC_Application5(void);
+static void MSC_Application6(void);
 
 USBH_HandleTypeDef hUSBHost; /* USB Host handle */
 typedef enum {
@@ -107,6 +108,8 @@ static void USBH_UserProcess(USBH_HandleTypeDef *phost, uint8_t id)
 }
 
 int FATFS_second=0;
+char USB_check_sec=0; //Elsan second USB check
+
 void usb_ls(void)
 {  
 	char stre[200];
@@ -971,6 +974,70 @@ void usb_file_del(void)
   //SERIAL_ECHOLNPGM("usb_ls finished");
 }
 
+void usb_check(void)  //Elsan check USB device.
+{  
+	//char stre[200];
+  long cntr=0;
+
+  if(USB_check_sec) {USBH_Process(&hUSBHost); return;}  //Elsan for second pass.
+
+  if(FATFS_second) {
+    Appli_state = APPLICATION_IDLE;
+    FATFS_UnLinkDriver(USBDISKPath);  //Elsan actually done when leaving MSC_Application.
+    USBH_Stop(&hUSBHost);
+    USBH_DeInit(&hUSBHost);    
+  } 
+    
+  //##-1- Link the USB Host disk I/O driver ##################################
+    if(FATFS_LinkDriver(&USBH_Driver, USBDISKPath) == 0)
+    { 
+      //SERIAL_ECHOLNPGM("Link the USB Host disk I/O driver");
+      FATFS_second=1;
+      USB_check_sec=1;
+      //##-2- Init Host Library ################################################
+      USBH_Init(&hUSBHost, USBH_UserProcess, 0); //Enable one by one.
+      
+      //##-3- Add Supported Class ##############################################
+      USBH_RegisterClass(&hUSBHost, USBH_MSC_CLASS); //Enable one by one.
+      
+      //##-4- Start Host Process ###############################################
+      USBH_Start(&hUSBHost); //Enable one by one.
+
+      //##-5- Run Application (Blocking mode) ##################################
+      while(cntr<100000) {
+        
+        // USB Host Background task 
+        USBH_Process(&hUSBHost);
+        
+        // Mass Storage Application State Machine 
+        switch(Appli_state)
+        {
+        case APPLICATION_START:
+        
+      	//MSC_Application6(); //Elsan only USB check. Could be disabled completely (f_mount)
+        
+        //stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.DevDesc.idVendor);
+      	
+      	//stre[0]=0;//clean content
+      	//sprintf(stre, "%d", hUSBHost.device.speed);
+      	
+        Appli_state = APPLICATION_IDLE;
+        
+        return; //Elsan no need to wait for remaining loops.
+        break;
+
+        case APPLICATION_IDLE:
+        default:
+        break;
+        }
+
+       cntr++; 
+      }
+    }
+    
+}
+
 static void MSC_Application2(void)
 {
   FRESULT res;  /* FatFs function common result code */
@@ -1066,6 +1133,40 @@ static void MSC_Application5(void)
     else
     {       
       return; //Elsan only f_open is needed.    
+    }
+  }
+
+  /* Unlink the USB disk I/O driver */
+  FATFS_UnLinkDriver(USBDISKPath);
+}
+
+static void MSC_Application6(void)  //Elsan only for USB check.
+{
+  FRESULT res;                                          /* FatFs function common result code */
+  int err_code;/* File read buffer */
+    
+  /* Register the file system object to the FatFs module */
+  if(f_mount(&USBDISKFatFs, (TCHAR const*)USBDISKPath, 0) != FR_OK)
+  {
+    /* FatFs Initialization Error */
+    SERIAL_ECHOPGM("MSC_App->f_mount error");
+    Error_Handler();
+  }
+  else
+  {	    
+    /* Delete */
+    //err_code=f_unlink((const char*) &fname2[0]);  //Elsan do nothing.
+    
+    if(err_code!=FR_OK)
+    {
+      /* Error */
+      SERIAL_ECHOPGM("MSC_App6->usb_check:error");
+      //sprintf(stre, "%d", err_code);      
+      Error_Handler();
+    }
+    else
+    {       
+      return;   
     }
   }
 

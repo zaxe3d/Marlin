@@ -83,6 +83,7 @@ extern "C" void ethernetif_update_config(struct netif *netif);
 static void MX_GPIO_Init(void);
 static void MX_USART6_UART_Init(void);
 void HAL_SPI_MspInitTEST(void);
+void usb_check(void);
 //extern "C" void SPI3_IRQHandler(void);
 #include "SPI.h"
 //#include <Arduino.h>
@@ -139,6 +140,12 @@ int first_trig0=0;
 int sec_trig0=0;
 //uint32_t m, m2;
 uint32_t us0,us20;
+extern char noUSB;
+int USB_check_cntr; //Counter variables should be put here not in main loop.
+#include "lcd/extui/lib/dgus/fysetc/DGUSDisplayDef.h"
+#include "lcd/extui/lib/dgus/DGUSScreenHandler.h"
+extern DGUSScreenHandler ScreenHandler; //Elsan
+extern char USB_check_sec;
 
 #define SPIx                             SPI3
 #define SPIx_CLK_ENABLE()                __HAL_RCC_SPI3_CLK_ENABLE()
@@ -1731,6 +1738,11 @@ void prnt_els(char * str) {
   SERIAL_ECHO("\r\n");
 }
 
+extern "C" void prnt_els3(char * str);
+void prnt_els3(char * str) {
+  queue.inject_P(PSTR("M118 P2 USB Connected"));  
+}
+
 //Elsan for C++ files.
 void prnt_els2(char * str) {
   SERIAL_ECHO(str);
@@ -1793,6 +1805,7 @@ static void MX_GPIO_Init(void)
 void loop() {
  unsigned char input[100]; 
  uint32_t byteswritten;
+ 
   do {
     
     idle();
@@ -2013,6 +2026,23 @@ jmp:
   } 
   */  //Elsan dis for test  
 
+  //if(USB_check_cntr>=200) {
+  if(USB_check_cntr>=50) {  
+    if(!isUSB_fileopen) {
+      //noUSB=1;
+      usb_check();
+      if(noUSB) {
+        queue.inject_P(PSTR("M118 P2 No USB\n"));
+        ScreenHandler.GotoScreen(DGUSLCD_SCREEN_NOUSB);
+      }
+      else queue.inject_P(PSTR("M118 P2 USB Connected\n"));
+    }
+    //else queue.inject_P(PSTR("M118 P2 USB Connected")); //During printing or SPI transfer no need to send.
+    else USB_check_sec=0;
+    USB_check_cntr=0;
+  }
+  USB_check_cntr++;
+  
 }
 
 
