@@ -594,6 +594,18 @@ namespace ExtUI {
     }
   #endif
 
+  #if ENABLED(SKEW_CORRECTION)
+    void setSkewFactor_xy(const float value) {
+      planner.skew_factor.xy = value;
+      sync_plan_position();
+      report_current_position();
+    }
+
+    float getSkewFactor_xy() {
+      return planner.skew_factor.xy;
+    }
+  #endif
+
   float getAxisSteps_per_mm(const axis_t axis) {
     return planner.settings.axis_steps_per_mm[axis];
   }

@@ -231,6 +231,13 @@ const uint16_t VPList_SDPrintTune[] PROGMEM = {
   0x0000
 };
 
+const uint16_t VPList_SkewFactor[] PROGMEM = {
+  #if ENABLED(SKEW_CORRECTION)
+    VP_XY_SKEW_FACTOR,
+  #endif
+  0x0000
+};
+
 const uint16_t VPList_StepPerMM[] PROGMEM = {
   VP_X_STEP_PER_MM,
   VP_Y_STEP_PER_MM,
@@ -377,6 +384,7 @@ const struct VPMapping VPMap[] PROGMEM = {
   { DGUSLCD_SCREEN_PID_E, VPList_PIDE0 },
   { DGUSLCD_SCREEN_PID_BED, VPList_PIDBED },
   { DGUSLCD_SCREEN_INFOS, VPList_Infos },
+  { DGUSLCD_SCREEN_SKEW_CALIBRATION, VPList_SkewFactor },
   { 0 , nullptr } // List is terminated with an nullptr as table entry.
 };
 
@@ -515,6 +523,15 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   #if ENABLED(PRINTCOUNTER)
     VPHELPER_STR(VP_PrintAccTime, nullptr, VP_PrintAccTime_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintAccTimeToDisplay),
     VPHELPER_STR(VP_PrintsTotal, nullptr, VP_PrintsTotal_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintsTotalToDisplay),
+  #endif
+
+
+  #if ENABLED(SKEW_CORRECTION)
+    VPHELPER(VP_XY_DIAG_AC, nullptr, ScreenHandler.HandleSkewVarsChanged, nullptr),
+    VPHELPER(VP_XY_DIAG_BD, nullptr, ScreenHandler.HandleSkewVarsChanged, nullptr),
+    VPHELPER(VP_XY_SIDE_AD, nullptr, ScreenHandler.HandleSkewVarsChanged, nullptr),
+    VPHELPER(VP_XY_SKEW_CALC, nullptr, ScreenHandler.HandleSkewVarsChanged, nullptr),
+    VPHELPER(VP_XY_SKEW_FACTOR, &planner.skew_factor.xy, nullptr, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<2>),
   #endif
 
   VPHELPER(VP_X_STEP_PER_MM, &planner.settings.axis_steps_per_mm[X_AXIS], ScreenHandler.HandleStepPerMMChanged, ScreenHandler.DGUSLCD_SendFloatAsIntValueToDisplay<1>),

@@ -282,8 +282,8 @@ typedef struct {
       const float xz = XZ_SKEW_FACTOR, yz = YZ_SKEW_FACTOR;
     #endif
   #else
-    const float xy = XY_SKEW_FACTOR,
-                xz = XZ_SKEW_FACTOR, yz = YZ_SKEW_FACTOR;
+    float xy = XY_SKEW_FACTOR,
+          xz = XZ_SKEW_FACTOR, yz = YZ_SKEW_FACTOR;
   #endif
 } skew_factor_t;
 

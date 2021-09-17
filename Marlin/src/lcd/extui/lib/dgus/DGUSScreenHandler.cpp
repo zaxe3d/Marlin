@@ -1051,6 +1051,37 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
 
 #endif
 
+#if ENABLED(SKEW_CORRECTION)
+  typedef struct  {
+    float xy_diag_ac = XY_DIAG_AC;
+    float xy_diag_bd = XY_DIAG_BD;
+    float xy_side_ad = XY_SIDE_AD;
+    float xy_skew_factor = 0.0;
+  } xy_calib_data_t;
+  static xy_calib_data_t xy_calib_data;
+
+  void DGUSScreenHandler::HandleSkewVarsChanged(DGUS_VP_Variable &var, void *val_ptr) {
+    DEBUG_ECHOLNPGM("HandleSkewVarsChanged");
+
+    uint16_t value_raw = swap16(*(uint16_t*)val_ptr);
+    float value = (float)value_raw / 100;
+    DEBUG_ECHOLNPAIR("value_raw:", value_raw);
+    switch (var.VP) {
+      case VP_XY_DIAG_AC: xy_calib_data.xy_diag_ac = value; break;
+      case VP_XY_DIAG_BD: xy_calib_data.xy_diag_bd = value; break;
+      case VP_XY_SIDE_AD: xy_calib_data.xy_side_ad = value; break;
+      case VP_XY_SKEW_CALC:
+        // now calcualte the skew factor
+        xy_calib_data.xy_skew_factor = (float)_SKEW_FACTOR((float)xy_calib_data.xy_diag_ac, (float)xy_calib_data.xy_diag_bd, (float)xy_calib_data.xy_side_ad);
+        ExtUI::setSkewFactor_xy(xy_calib_data.xy_skew_factor);
+        (void)settings.save();
+        GotoScreen(DGUSLCD_SCREEN_SKEW_CALIBRATION);
+        break;
+      default: return;
+    }
+  }
+#endif
+
 #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
 
   typedef struct  {

@@ -114,6 +114,9 @@ namespace ExtUI {
   float getTargetTemp_celsius(const extruder_t);
   float getTargetFan_percent(const fan_t);
   float getActualFan_percent(const fan_t);
+  #if ENABLED(SKEW_CORRECTION)
+    float getSkewFactor_xy();
+  #endif
   float getAxisPosition_mm(const axis_t);
   float getAxisPosition_mm(const extruder_t);
   float getAxisSteps_per_mm(const axis_t);
@@ -172,6 +175,9 @@ namespace ExtUI {
   void setAxisPosition_mm(const float, const axis_t, const feedRate_t=0);
   void setAxisPosition_mm(const float, const extruder_t, const feedRate_t=0);
   void setCurrentExtruderPosition_mm(const float position);
+  #if ENABLED(SKEW_CORRECTION)
+    void setSkewFactor_xy(const float);
+  #endif
   void setAxisSteps_per_mm(const float, const axis_t);
   void setAxisSteps_per_mm(const float, const extruder_t);
   void setAxisMaxFeedrate_mm_s(const feedRate_t, const axis_t);

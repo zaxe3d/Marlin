@@ -59,6 +59,9 @@ public:
     static void HandleManualMoveOption(DGUS_VP_Variable &var, void *val_ptr);
   #endif
 
+  #if ENABLED(SKEW_CORRECTION)
+    static void HandleSkewVarsChanged(DGUS_VP_Variable &var, void *val_ptr);
+  #endif
   //Elsan
   #if ENABLED(FIRST_LAYER_CALIBRATION)
     // Hook for first layer calibration option
