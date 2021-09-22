@@ -469,13 +469,11 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
   void DGUSScreenHandler::DGUSLCD_SD_ReallyAbort(DGUS_VP_Variable &var, void *val_ptr) {
     //Elsan from old version
     //SERIAL_ECHOLNPGM("DGUSLCD_SD_ReallyAbort");
-    /*
     uint16_t value = swap16(*(uint16_t*)val_ptr);
     if (!value) {
       PopToOldScreen();
       return;
     } 
-    */   
     ////////////////////////
     ExtUI::stopPrint(); //Elsan dis. Similar to abortSDPrinting triggered after M524. Can be used.
     //queue.enqueue_now_P("M524");  //Elsan add
