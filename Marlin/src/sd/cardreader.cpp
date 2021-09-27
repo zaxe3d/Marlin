@@ -707,7 +707,8 @@ void CardReader::removeFile(const char * const name) {
   //endFilePrint();
 
   SdFile *curDir;
-  const char * const fname = diveToFile(false, curDir, name);
+  //const char * const fname = diveToFile(false, curDir, name);
+  const char * const fname = name; //Elsan path is needed.
 
   //Elsan
   strcpy(fname2,fname); //Elsan must be before f_open in usb_file_open(). It could have been carried by filename also.
