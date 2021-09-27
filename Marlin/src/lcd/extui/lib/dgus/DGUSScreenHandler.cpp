@@ -340,13 +340,17 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
      //char buf[21];
      //sprintf(buf, "%s", "ABC");
      //dgusdisplay.WriteVariable(VP_SD_Refresh_List, buf, var.size, true);
-     dgusdisplay.WriteVariable(VP_SD_FileName0, &buf_main[/*file_cnt3*//*top_file*/0][0], 40, true);
-     dgusdisplay.WriteVariable(VP_SD_FileName1, &buf_main[/*file_cnt3*//*top_file*/1][0], 40, true);
-     dgusdisplay.WriteVariable(VP_SD_FileName2, &buf_main[/*file_cnt3*//*top_file*/2][0], 40, true);
-     dgusdisplay.WriteVariable(VP_SD_FileName3, &buf_main[/*file_cnt3*//*top_file*/3][0], 40, true);
-     dgusdisplay.WriteVariable(VP_SD_FileName4, &buf_main[/*file_cnt3*//*top_file*/4][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName0, &buf_main[0][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName1, &buf_main[1][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName2, &buf_main[2][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName3, &buf_main[3][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName4, &buf_main[4][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName5, &buf_main[5][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName6, &buf_main[6][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName7, &buf_main[7][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName8, &buf_main[8][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName9, &buf_main[9][0], 40, true);
      //ForceCompleteUpdate(); //test
-     
   }
   ////////////////////////////
 
@@ -362,7 +366,7 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
         DEBUG_ECHOLNPGM("Top of filelist reached");
       }
       else {
-        int16_t max_top = filelist.count()/*file_cnt2*/ -  DGUS_SD_FILESPERSCREEN;
+        int16_t max_top = filelist.count()/*file_cnt2*/ - DGUS_SD_FILESPERSCREEN;
         NOLESS(max_top, 0);
         NOMORE(top_file, max_top);
       }
@@ -376,18 +380,19 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
     
     if (old_top != top_file) ForceCompleteUpdate();
       
-     file_cnt3+=scroll; 
-     if(file_cnt3>=file_cnt2) file_cnt3-=scroll;
-     if(file_cnt3<0) file_cnt3+=5;
-     dgusdisplay.WriteVariable(VP_SD_FileName0, &buf_main[file_cnt3/*top_file*/][0], 40, true);
-     //if((file_cnt3+1)<file_cnt2)
-     dgusdisplay.WriteVariable(VP_SD_FileName1, &buf_main[file_cnt3/*top_file*/+1][0], 40, true);
-     //if((file_cnt3+2)<file_cnt2)
-     dgusdisplay.WriteVariable(VP_SD_FileName2, &buf_main[file_cnt3/*top_file*/+2][0], 40, true);
-     //if((file_cnt3+3)<file_cnt2)
-     dgusdisplay.WriteVariable(VP_SD_FileName3, &buf_main[file_cnt3/*top_file*/+3][0], 40, true);
-     //if((file_cnt3+4)<file_cnt2)
-     dgusdisplay.WriteVariable(VP_SD_FileName4, &buf_main[file_cnt3/*top_file*/+4][0], 40, true);
+     file_cnt3 += scroll;
+     if(file_cnt3 >= file_cnt2) file_cnt3 -= scroll;
+     if(file_cnt3 < 0) file_cnt3 += 5;
+     dgusdisplay.WriteVariable(VP_SD_FileName0, &buf_main[file_cnt3+0][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName1, &buf_main[file_cnt3+1][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName2, &buf_main[file_cnt3+2][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName3, &buf_main[file_cnt3+3][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName4, &buf_main[file_cnt3+4][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName5, &buf_main[file_cnt3+5][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName6, &buf_main[file_cnt3+6][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName7, &buf_main[file_cnt3+7][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName8, &buf_main[file_cnt3+8][0], 40, true);
+     dgusdisplay.WriteVariable(VP_SD_FileName9, &buf_main[file_cnt3+9][0], 40, true);
      //ForceCompleteUpdate(); //test
   }
 

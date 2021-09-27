@@ -262,13 +262,18 @@ constexpr uint16_t VP_PrintsTotal_LEN = 16;
 
 // SDCard File Listing
 constexpr uint16_t VP_SD_FileName_LEN = 32; // LEN is shared for all entries. Elsan can't be increased.
-constexpr uint16_t DGUS_SD_FILESPERSCREEN = 5; // FIXME move that info to the display and read it from there.
+constexpr uint16_t DGUS_SD_FILESPERSCREEN = 10; // FIXME move that info to the display and read it from there.
 constexpr uint16_t VP_SD_Refresh_List = 0x3198; // Refresh the list //Elsan
 constexpr uint16_t VP_SD_FileName0 = 0x3200;
 constexpr uint16_t VP_SD_FileName1 = 0x3220;
 constexpr uint16_t VP_SD_FileName2 = 0x3240;
 constexpr uint16_t VP_SD_FileName3 = 0x3260;
 constexpr uint16_t VP_SD_FileName4 = 0x3280;
+constexpr uint16_t VP_SD_FileName5 = 0x3420;
+constexpr uint16_t VP_SD_FileName6 = 0x3440;
+constexpr uint16_t VP_SD_FileName7 = 0x3460;
+constexpr uint16_t VP_SD_FileName8 = 0x3480;
+constexpr uint16_t VP_SD_FileName9 = 0x35A0;
 
 constexpr uint16_t VP_SD_Print_ProbeOffsetZ = 0x32A0; //
 constexpr uint16_t VP_SD_Print_Filename = 0x32C0;
