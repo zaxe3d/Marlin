@@ -606,7 +606,7 @@
 
 // Enable one of the options below for CoreXY, CoreXZ, or CoreYZ kinematics,
 // either in the usual order or reversed
-//#define COREXY
+#define COREXY
 //#define COREXZ
 //#define COREYZ
 //#define COREYX
@@ -747,11 +747,8 @@
  * Override with M92
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
-//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 99 } //GOKALP { 100, 100, 400, 138 } //138?! ZAXE motorlu X-Lite+ lar
-//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 200, 160, 400, 98 } //GOKALP { 100, 100, 400, 138 } //GOKALP masadaki X-Lite+
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 136.724 } //GOKALP { 100, 100, 400, 138 } //GOKALP masadaki X-Lite+ + orbiter 735
-//#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 141.8 } //GOKALP { 100, 100, 400, 138 } //GOKALP ZAXE motorlu X-Lite+ + Kırmızı dual gear creality extruder
 
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 415}
 /**
  * Default Max Feed Rate (mm/s)
  * Override with M203
@@ -995,14 +992,14 @@
  *     |    [-]    |
  *     O-- FRONT --+
  */
-#define NOZZLE_TO_PROBE_OFFSET { -22, -15, -0.95 /*-1.9*/ } //GOKALP { 7.5, -30.75, -1 }
+#define NOZZLE_TO_PROBE_OFFSET { 21, 16, 0 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
 //#define PROBING_MARGIN 10
 
 // X and Y axis travel speed (mm/min) between probes
-#define XY_PROBE_SPEED (60*60) //GOKALP (133*60)
+#define XY_PROBE_SPEED (100*60) //baki
 
 // Feedrate (mm/min) for the first approach when double-probing (MULTIPLE_PROBING == 2)
 #define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
@@ -1036,12 +1033,12 @@
  * Example: `M851 Z-5` with a CLEARANCE of 4  =>  9mm from bed to nozzle.
  *     But: `M851 Z+1` with a CLEARANCE of 2  =>  2mm from bed to nozzle.
  */
-#define Z_CLEARANCE_DEPLOY_PROBE   3 //GOKALP 10 // Z Clearance for Deploy/Stow
-#define Z_CLEARANCE_BETWEEN_PROBES  1 //GOKALP 5 // Z Clearance between probe points
-#define Z_CLEARANCE_MULTI_PROBE     1 //GOKALP 5 // Z Clearance between multiple probes
+#define Z_CLEARANCE_DEPLOY_PROBE   3
+#define Z_CLEARANCE_BETWEEN_PROBES  3 // Z Clearance between probe points
+#define Z_CLEARANCE_MULTI_PROBE     3 // Z Clearance between multiple probes
 //#define Z_AFTER_PROBING           5 // Z position after probing is done
 
-#define Z_PROBE_LOW_POINT          -4 //GOKALP  -2 // Farthest distance below the trigger-point to go before stopping
+#define Z_PROBE_LOW_POINT          -4 // Farthest distance below the trigger-point to go before stopping
 
 // For M851 give a range for adjusting the Z probe offset
 #define Z_PROBE_OFFSET_RANGE_MIN -20
@@ -1095,16 +1092,16 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR true//false
-#define INVERT_Y_DIR true
-#define INVERT_Z_DIR false  //GOKALP Xlite+2 
+#define INVERT_X_DIR false
+#define INVERT_Y_DIR true //x3liteBaki
+#define INVERT_Z_DIR false //false //bakix3lite //GOKALP Xlite+2
 //#define INVERT_Z_DIR true  //GOKALP Xlite+ Gokalp masadaki icin
 
 // @section extruder
 
 // For direct drive extruder v9 set to true, for geared extruder set to false.
 //#define INVERT_E0_DIR false   //GOKALP Xlite+2 / dual gear red
-#define INVERT_E0_DIR true   //GOKALP Xlite+ Gokalp masadaki icin / orbiter / GOKALP Xlite+2 actual size
+#define INVERT_E0_DIR false
 #define INVERT_E1_DIR false
 #define INVERT_E2_DIR false
 #define INVERT_E3_DIR false
@@ -1133,16 +1130,16 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 190 //220
-#define Y_BED_SIZE 190 //230
+#define X_BED_SIZE 230
+#define Y_BED_SIZE 230
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
-#define Y_MIN_POS 0
+#define Y_MIN_POS -20
 #define Z_MIN_POS 0
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 190 //200 //Elsan
+#define Z_MAX_POS 250 //200 //Elsan
 
 /**
  * Software Endstops
@@ -1399,8 +1396,8 @@
 #define Z_SAFE_HOMING
 
 #if ENABLED(Z_SAFE_HOMING)
-  #define Z_SAFE_HOMING_X_POINT 10 //GOKALP X_CENTER  // X point for Z homing
-  #define Z_SAFE_HOMING_Y_POINT 10 //GOKALP Y_CENTER  // Y point for Z homing
+  #define Z_SAFE_HOMING_X_POINT 50
+  #define Z_SAFE_HOMING_Y_POINT 50 
 #endif
 
 // Homing speeds (mm/min)
