@@ -1633,6 +1633,9 @@ HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   TIM5->PSC = HAL_RCC_GetPCLK1Freq() / 500000;
   TIM5->CR1 = TIM_CR1_CEN;
   TIM5->CNT = -10;
+
+  queue.inject_P(PSTR("M42 P12 M1\n M42 P13 M1")); //Make ESP_RST Output.
+  queue.inject_P(PSTR("M42 P12 S255\n M42 P13 S255")); //Set ESP_RST.
 }
 
 
