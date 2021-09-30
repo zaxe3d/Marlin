@@ -2036,7 +2036,8 @@ jmp:
       usb_check();
       if(noUSB) {
         queue.inject_P(PSTR("M118 P2 No USB\n"));
-        ScreenHandler.GotoScreen(DGUSLCD_SCREEN_NOUSB);
+        if (ScreenHandler.getCurrentScreen() == DGUSLCD_SCREEN_SDFILELIST)
+          ScreenHandler.GotoScreen(DGUSLCD_SCREEN_NOUSB);
       }
       else queue.inject_P(PSTR("M118 P2 USB Connected\n"));
     }
