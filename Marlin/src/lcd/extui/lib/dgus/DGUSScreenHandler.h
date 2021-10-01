@@ -273,11 +273,13 @@ public:
   static inline bool IsScreenComplete() { return ScreenComplete; }
 
   static inline DGUSLCD_Screens getCurrentScreen() { return current_screen; }
+  static inline bool isOnFileListScreen() { return on_file_list_screen; }
 
   static inline void SetupConfirmAction( void (*f)()) { confirm_action_cb = f; }
 
 private:
   static DGUSLCD_Screens current_screen;  ///< currently on screen
+  static bool on_file_list_screen; // indicator to check if we are on flash disk page
   static constexpr uint8_t NUM_PAST_SCREENS = 4;
   static DGUSLCD_Screens past_screens[NUM_PAST_SCREENS]; ///< LIFO with past screens for the "back" button.
 

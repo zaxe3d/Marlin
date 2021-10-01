@@ -70,6 +70,7 @@ DGUSLCD_Screens DGUSScreenHandler::past_screens[NUM_PAST_SCREENS];
 uint8_t DGUSScreenHandler::update_ptr;
 uint16_t DGUSScreenHandler::skipVP;
 bool DGUSScreenHandler::ScreenComplete;
+bool DGUSScreenHandler::on_file_list_screen;
 
 //DGUSDisplay dgusdisplay;
 
@@ -332,7 +333,8 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
      file_cnt=0; //File counter.
      file_cnt3=0; 
      top_file = 0;  
-     file_to_print=0; 
+     file_to_print=0;
+     on_file_list_screen = true;
      
      for(int a=0;a<50;a++) memset(&buf_main[a][0],0x00,200)/*buf_main[a][0]=0*/;
      usb_ls2(); 
@@ -567,6 +569,7 @@ void DGUSScreenHandler::ScreenChangeHook(DGUS_VP_Variable &var, void *val_ptr) {
   // from screen 1 (main) to 10 (temperature). DGUSLCD_SCREEN_POPUP is special,
   // meaning "return to previous screen"
   DGUSLCD_Screens target = (DGUSLCD_Screens)tmp[1];
+  on_file_list_screen = false; // reset
 
   if (target == DGUSLCD_SCREEN_POPUP) {
     // special handling for popup is to return to previous menu
