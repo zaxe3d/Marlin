@@ -762,7 +762,7 @@ void usb_file_open(void)
 
 void usb_file_open_wr(void)
 {  
-	char stre[200];
+	char stre[/*200*/100];
   long cntr=0;
     
   //SERIAL_ECHOLNPGM("usb_ls starting");

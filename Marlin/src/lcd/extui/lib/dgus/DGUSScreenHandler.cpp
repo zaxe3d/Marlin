@@ -334,7 +334,7 @@ void DGUSScreenHandler::DGUSLCD_SendHeaterStatusToDisplay(DGUS_VP_Variable &var)
      file_cnt3=0; 
      top_file = 0;  
      file_to_print=0;
-     on_file_list_screen = true;
+     on_file_list_screen = true; 
      
      for(int a=0;a<50;a++) memset(&buf_main[a][0],0x00,200)/*buf_main[a][0]=0*/;
      usb_ls2(); 

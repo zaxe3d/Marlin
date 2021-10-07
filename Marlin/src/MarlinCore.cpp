@@ -146,6 +146,11 @@ int USB_check_cntr; //Counter variables should be put here not in main loop.
 #include "lcd/extui/lib/dgus/DGUSScreenHandler.h"
 extern DGUSScreenHandler ScreenHandler; //Elsan
 extern char USB_check_sec;
+extern I2C_HandleTypeDef hi2c1; //Elsan
+static void MX_I2C1_Init(void);
+void st25dv64k_init	(void);
+void eeprom_init(void);
+void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c);
 
 #define SPIx                             SPI3
 #define SPIx_CLK_ENABLE()                __HAL_RCC_SPI3_CLK_ENABLE()
@@ -1636,6 +1641,10 @@ HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   queue.inject_P(PSTR("M42 P12 M1\n M42 P13 M1")); //Make ESP_RST Output.
   queue.inject_P(PSTR("M42 P12 S255\n M42 P13 S255")); //Set ESP_RST.
+  //queue.enqueue_one_P(PSTR("M42 P13 M1")); //Make ESP_GPIO0 Output.
+  //queue.enqueue_one_P(PSTR("M42 P13 S255")); //Set ESP_GPIO0.
+  
+  MX_I2C1_Init();
 }
 
 
@@ -1750,6 +1759,10 @@ void prnt_els3(char * str) {
 void prnt_els2(char * str) {
   SERIAL_ECHO(str);
   SERIAL_ECHO("\r\n");
+}
+
+void prnt_els4(char * str) {
+  SERIAL_ECHO(str);  
 }
 
 UART_HandleTypeDef /*huart6*/huart3;
@@ -1915,7 +1928,7 @@ again5:
     
 jmp:     
     //Duty cycle: give more time to SPI.
-    //HAL_watchdog_refresh(); //No load.
+    HAL_watchdog_refresh(); //No load.
     if((say!=1024000)&&(start)) {
       goto again;
     } 
@@ -2028,10 +2041,14 @@ jmp:
     sec_trig0=0;
   } 
   */  //Elsan dis for test  
-
+  
   //if(USB_check_cntr>=200) {
+  //if(queue.has_commands_queued()==FALSE) {  
   if(USB_check_cntr>=50) {  
     if(!isUSB_fileopen) {
+      //queue.inject_P(PSTR("M400")); //Test
+      //queue.enqueue_one_P(PSTR("M400"));
+      //queue.enqueue_now_P(PSTR("M400"));
       //noUSB=1;
       usb_check();
       if(noUSB) {
@@ -2046,6 +2063,7 @@ jmp:
     USB_check_cntr=0;
   }
   USB_check_cntr++;
+  //}
   
 }
 
@@ -2062,3 +2080,91 @@ inline void SPI3_Transfer(uint8_t *outp, uint8_t *inp, int count) {
 }
 
 
+static void MX_I2C1_Init(void) {
+//void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c) {
+GPIO_InitTypeDef GPIO_InitStruct;
+__HAL_RCC_GPIOA_CLK_ENABLE();
+__HAL_RCC_GPIOC_CLK_ENABLE();
+
+GPIO_InitStruct.Pin= GPIO_PIN_8;
+GPIO_InitStruct.Mode= GPIO_MODE_AF_OD/*GPIO_MODE_AF_PP*/;
+GPIO_InitStruct.Pull= GPIO_PULLUP;
+GPIO_InitStruct.Speed= /*GPIO_SPEED_HIGH*/GPIO_SPEED_FREQ_VERY_HIGH;
+GPIO_InitStruct.Alternate= GPIO_AF4_I2C3;
+HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+GPIO_InitStruct.Pin= GPIO_PIN_9;
+GPIO_InitStruct.Mode= GPIO_MODE_AF_OD/*GPIO_MODE_AF_PP*/;
+GPIO_InitStruct.Pull= GPIO_PULLUP;
+GPIO_InitStruct.Speed= /*GPIO_SPEED_HIGH*/GPIO_SPEED_FREQ_VERY_HIGH;
+GPIO_InitStruct.Alternate= GPIO_AF4_I2C3;
+HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+/* Enable the DISCOVERY_I2Cx peripheral clock */
+  //DISCOVERY_I2Cx_CLK_ENABLE();
+  __HAL_RCC_I2C3_CLK_ENABLE();
+
+  /* Force the I2C peripheral clock reset */
+  //DISCOVERY_I2Cx_FORCE_RESET();
+  __HAL_RCC_I2C3_FORCE_RESET();
+
+  /* Release the I2C peripheral clock reset */
+  //DISCOVERY_I2Cx_RELEASE_RESET();
+  __HAL_RCC_I2C3_RELEASE_RESET();
+
+  /* Enable and set I2Cx Interrupt to the highest priority */
+  HAL_NVIC_SetPriority(/*DISCOVERY_I2Cx_EV_IRQn*/I2C3_EV_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(/*DISCOVERY_I2Cx_EV_IRQn*/I2C3_EV_IRQn);
+
+  /* Enable and set I2Cx Interrupt to the highest priority */
+  HAL_NVIC_SetPriority(/*DISCOVERY_I2Cx_ER_IRQn*/I2C3_ER_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(/*DISCOVERY_I2Cx_ER_IRQn*/I2C3_ER_IRQn); 
+  //}
+    /* USER CODE BEGIN I2C1_Init 0 */
+  /*  
+  GPIO_InitTypeDef GPIO_InitStruct;
+	I2C_InitTypeDef I2C_InitStruct;
+	
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C3, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);
+	
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_8;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStruct);
+	
+	GPIO_InitStruct.GPIO_Pin = GPIO_Pin_9;
+	GPIO_InitStruct.GPIO_Mode = GPIO_Mode_AF;
+	GPIO_InitStruct.GPIO_OType = GPIO_OType_OD;
+	GPIO_InitStruct.GPIO_PuPd = GPIO_PuPd_UP;
+	GPIO_InitStruct.GPIO_Speed = GPIO_Speed_2MHz;
+	GPIO_Init(GPIOC, &GPIO_InitStruct);
+	
+	GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_I2C3); //SCL
+	GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_I2C3); //SDA
+  */
+    /* USER CODE END I2C1_Init 0 */
+
+    /* USER CODE BEGIN I2C1_Init 1 */
+//static void MX_I2C1_Init(void) {
+    /* USER CODE END I2C1_Init 1 */
+    hi2c1.Instance = /*I2C1*/I2C3;
+    hi2c1.Init.ClockSpeed = 100000;
+    hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+    hi2c1.Init.OwnAddress1 = 0;
+    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+    hi2c1.Init.OwnAddress2 = 0;
+    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+    if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
+        Error_Handler();
+    }
+    /* USER CODE BEGIN I2C1_Init 2 */
+    //void eeprom_init();
+    //st25dv64k_init();
+    /* USER CODE END I2C1_Init 2 */
+}

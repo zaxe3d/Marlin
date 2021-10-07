@@ -39,10 +39,14 @@
 
 #define DEFAULT_MACHINE_NAME "Xlite+" //"STM32F407VGT6"
 
-//#define I2C_EEPROM
+#define I2C_EEPROM
 //#define SRAM_EEPROM_EMULATION
-#define FLASH_EEPROM_EMULATION
+//#define FLASH_EEPROM_EMULATION
 #define MARLIN_EEPROM_SIZE                0x2000  // 8KB
+//#define EEPROM_PAGE_SIZE     (0x2000U)            // 8KB
+//#define SOFT_I2C_EEPROM
+#define I2C_SCL_PIN                       PA8
+#define I2C_SDA_PIN                       PC9
 
 //
 // Servos
@@ -187,6 +191,7 @@
   #endif
 #endif
 
+//#define MISO_PIN                 PC11 //Elsan test
 //elsan
 #define HAS_TMC_UART 1
 /**
