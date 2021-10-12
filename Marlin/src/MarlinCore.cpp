@@ -1256,6 +1256,7 @@ void setup() {
     SETUP_RUN(card.mount());          // Mount media with settings before first_load
   #endif
   
+  MX_I2C1_Init(); //Elsan
   SETUP_RUN(settings.first_load());   // Load data from EEPROM if available (or use defaults)
                                       // This also updates variables in the planner, elsewhere
 
@@ -1644,7 +1645,7 @@ HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
   //queue.enqueue_one_P(PSTR("M42 P13 M1")); //Make ESP_GPIO0 Output.
   //queue.enqueue_one_P(PSTR("M42 P13 S255")); //Set ESP_GPIO0.
   
-  MX_I2C1_Init();
+  //MX_I2C1_Init();
 }
 
 
