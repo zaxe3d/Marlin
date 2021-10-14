@@ -63,6 +63,7 @@
 //#include "../../inc/MarlinConfig.h"
 //#include "serial.h"
 #include "stm32f4xx_hal_eth.h"  //Elsan
+#include "stm32f4xx_hal_i2c.h"  //Elsan
 
 /*
 #define PGM_P2  const char *
@@ -79,6 +80,7 @@ extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
 UART_HandleTypeDef /*huart6*/huart3;
 
 extern ETH_HandleTypeDef EthHandle;
+extern I2C_HandleTypeDef hi2c1; //Elsan
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -254,6 +256,28 @@ void SPI3_IRQHandler(void)
 }
 */
 /* USER CODE BEGIN 1 */
+
+/**
+  * @brief  This function handles I2C event interrupt request.
+  * @param  None
+  * @retval None
+  * @Note   This function is redefined in "main.h" and related to I2C data transmission
+  */
+void I2Cx_EV_IRQHandler(void)
+{
+  HAL_I2C_EV_IRQHandler(&hi2c1);
+}
+
+/**
+  * @brief  This function handles I2C error interrupt request.
+  * @param  None
+  * @retval None
+  * @Note   This function is redefined in "main.h" and related to I2C error
+  */
+void I2Cx_ER_IRQHandler(void)
+{
+  HAL_I2C_ER_IRQHandler(&hi2c1);
+}
 
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
