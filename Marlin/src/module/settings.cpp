@@ -64,6 +64,7 @@
 #endif
 
 #include "probe.h"
+#include "material.h"
 
 #if HAS_LEVELING
   #include "../feature/bedlevel/bedlevel.h"
@@ -211,6 +212,9 @@ typedef struct SettingsDataStruct {
   uint8_t mesh_num_x, mesh_num_y;                       // GRID_MAX_POINTS_X, GRID_MAX_POINTS_Y
   float mbl_z_values[TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_X, 3)]   // mbl.z_values
                     [TERN(MESH_BED_LEVELING, GRID_MAX_POINTS_Y, 3)];
+
+  uint8_t material_type;                                // Material type
+  Material::custom_temp_t material_custom_temp;         // Material custom ext temp
 
   //
   // HAS_BED_PROBE
@@ -697,6 +701,24 @@ void MarlinSettings::postprocess() {
       #else
         for (uint8_t q = mesh_num_x * mesh_num_y; q--;) EEPROM_WRITE(dummyf);
       #endif
+    }
+
+    //
+    // Material Type
+    //
+    {
+      _FIELD_TEST(material_type);
+      const uint8_t mt = material.type;
+      EEPROM_WRITE(mt);
+    }
+
+    //
+    // Material Custom Temp
+    //
+    {
+      _FIELD_TEST(material_custom_temp);
+      const Material::custom_temp_t mct = material.custom_temp;
+      EEPROM_WRITE(mct);
     }
 
     //
@@ -1569,6 +1591,24 @@ void MarlinSettings::postprocess() {
           // MBL is disabled - skip the stored data
           for (uint16_t q = mesh_num_x * mesh_num_y; q--;) EEPROM_READ(dummyf);
         #endif // MESH_BED_LEVELING
+      }
+
+      //
+      // Material type
+      //
+      {
+        _FIELD_TEST(material_type);
+        const uint8_t &mt = material.type;
+        EEPROM_READ(mt);
+      }
+
+      //
+      // Material Custom Temp
+      //
+      {
+        _FIELD_TEST(material_custom_temp);
+        const Material::custom_temp_t &mct = material.custom_temp;
+        EEPROM_READ(mct);
       }
 
       //
