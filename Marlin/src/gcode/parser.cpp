@@ -35,7 +35,7 @@
 // Must be declared for allocation and to satisfy the linker
 // Zero values need no initialization.
 
-bool GCodeParser::volumetric_enabled;
+/*bool*/int/*uint8_t*/ GCodeParser::volumetric_enabled;
 
 #if ENABLED(INCH_MODE_SUPPORT)
   float GCodeParser::linear_unit_factor, GCodeParser::volumetric_unit_factor;

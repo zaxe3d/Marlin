@@ -349,7 +349,7 @@ typedef struct SettingsDataStruct {
   //
   // !NO_VOLUMETRIC
   //
-  bool parser_volumetric_enabled;                       // M200 S  parser.volumetric_enabled
+  /*bool*/int/*uint8_t*/ parser_volumetric_enabled;                       // M200 S  parser.volumetric_enabled
   float planner_filament_size[EXTRUDERS];               // M200 T D  planner.filament_size[]
   float planner_volumetric_extruder_limit[EXTRUDERS];   // M200 T L  planner.volumetric_extruder_limit[]
 
@@ -1904,7 +1904,7 @@ void MarlinSettings::postprocess() {
       //
       {
         struct {
-          bool volumetric_enabled;
+          /*bool*/int/*uint8_t*/ volumetric_enabled;
           float filament_size[EXTRUDERS];
           float volumetric_extruder_limit[EXTRUDERS];
         } storage;
@@ -2598,6 +2598,10 @@ void MarlinSettings::reset() {
   //
   TERN_(ENABLE_LEVELING_FADE_HEIGHT, new_z_fade_height = 0.0);
   TERN_(HAS_LEVELING, reset_bed_level());
+
+  material.type = 0;
+  material.custom_temp.ext = 180.0;
+  material.custom_temp.bed = 50.0;
 
   #if HAS_BED_PROBE
     constexpr float dpo[] = NOZZLE_TO_PROBE_OFFSET;

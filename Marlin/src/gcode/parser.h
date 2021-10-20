@@ -70,7 +70,7 @@ public:
 
   // Global states for GCode-level units features
 
-  static bool volumetric_enabled;
+  static /*bool*/int/*uint8_t*/ volumetric_enabled;
 
   #if ENABLED(INCH_MODE_SUPPORT)
     static float linear_unit_factor, volumetric_unit_factor;
