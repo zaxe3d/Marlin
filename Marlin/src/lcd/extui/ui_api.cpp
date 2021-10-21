@@ -56,7 +56,7 @@ public:
     static uint8_t type;
 
     // hold custom material temp details here.
-    /*static*/ custom_temp_t custom_temp;
+    static custom_temp_t custom_temp;
    
 };
 Material material;
