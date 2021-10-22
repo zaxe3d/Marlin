@@ -749,7 +749,7 @@
  */
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 99 } //GOKALP { 100, 100, 400, 138 } //138?! ZAXE motorlu X-Lite+ lar
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 200, 160, 400, 98 } //GOKALP { 100, 100, 400, 138 } //GOKALP masadaki X-Lite+
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 136.724 } //GOKALP { 100, 100, 400, 138 } //GOKALP masadaki X-Lite+ + orbiter 735
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 100/*80*/, 400, 136.724 } //GOKALP { 100, 100, 400, 138 } //GOKALP masadaki X-Lite+ + orbiter 735
 //#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 80, 400, 141.8 } //GOKALP { 100, 100, 400, 138 } //GOKALP ZAXE motorlu X-Lite+ + Kırmızı dual gear creality extruder
 
 /**
