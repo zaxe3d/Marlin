@@ -66,12 +66,12 @@
 // Limit Switches
 //
 //elsan
-#define X_MIN_PIN                           PC3//PE2//PC13 elsan same as X_DIAG_PIN
+#define X_MIN_PIN                           PB3 //PE2//PC13 elsan same as X_DIAG_PIN
 //#define X_MAX_PIN                           PA15
-#define Y_MIN_PIN                           PE6//PE1//PA5 elsan same as Y_DIAG_PIN
-//#define Y_MAX_PIN                           PD12
-#define Z_MIN_PIN                           PE7//PA0//PD14 PINDA
-//#define Z_MAX_PIN                           PD15
+//#define Y_MIN_PIN                           PE6//PE1//PA5 elsan same as Y_DIAG_PIN
+#define Y_MAX_PIN                           PD0
+#define Z_MIN_PIN                           PE7 //PA0//PD14 PINDA
+#define Z_MAX_PIN                           PE13
 
 //
 // Z Probe must be this pins
@@ -134,7 +134,7 @@
 
 //Elsan: Normally drives mosfet. We used it to control PWM (4 wire).
 #define FAN_PIN                             PB8 //PB9//PE11//PE9   // Fan0
-#define FAN1_PIN                            PB9 //PB8//PE9//PE11   // Fan1
+//#define FAN1_PIN                            PB9 //PB8//PE9//PE11   // Fan1
 //#define FAN2_PIN                            PE13  // Fan2
 //#define FAN3_PIN                            PE14  // Fan3
 
@@ -206,7 +206,7 @@
   //Elsan X/Y/Z/E_HARDWARE_SERIAL could also has been used.
   #define X_SERIAL_TX_PIN                  PB6//PD5//PB15
   #define X_SERIAL_RX_PIN                  PB7//PD6//PB15
-  
+
   #define Y_SERIAL_TX_PIN                  PB6//PD5//PC6
   #define Y_SERIAL_RX_PIN                  PB7//PD6//PC6
 
@@ -215,7 +215,7 @@
 
   #define E0_SERIAL_TX_PIN                 PB6//PD5//PC11
   #define E0_SERIAL_RX_PIN                 PB7//PD6//PC11
-  
+
   // Reduce baud rate to improve software serial reliability
   #define TMC_BAUD_RATE 19200
 #endif
