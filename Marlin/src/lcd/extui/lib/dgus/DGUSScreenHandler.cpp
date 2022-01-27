@@ -960,7 +960,7 @@ void DGUSScreenHandler::HandleStepPerMMExtruderChanged(DGUS_VP_Variable &var, vo
     int16_t steps = flag ? -20 : 20;
     ExtUI::smartAdjustAxis_steps(steps, ExtUI::axis_t::Z, true);
     ScreenHandler.ForceCompleteUpdate();
-    
+    (void)settings.save();
     return;
   }
 #endif

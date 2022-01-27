@@ -777,7 +777,7 @@
 /**
  * Default Acceleration (change/s) change = mm/s
  * Override with M204
- *c
+ *
  *   M204 P    Acceleration
  *   M204 R    Retract Acceleration
  *   M204 T    Travel Acceleration
