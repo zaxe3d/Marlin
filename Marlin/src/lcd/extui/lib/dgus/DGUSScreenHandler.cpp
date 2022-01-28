@@ -1105,80 +1105,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
   static filament_data_t filament_data;
   static filament_data_t calibration_data;  //Elsan from old version
 
-  //Elsan new version
-  /*
-  void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
-    DEBUG_ECHOLNPGM("HandleFilamentOption");
-
-    uint8_t e_temp = 0;
-    filament_data.heated = false;
-    uint16_t preheat_option = swap16(*(uint16_t*)val_ptr);
-    if (preheat_option <= 8)          // Load filament type
-      filament_data.action = 1;
-    else if (preheat_option >= 10) {  // Unload filament type
-      preheat_option -= 10;
-      filament_data.action = 2;
-      filament_data.purge_length = DGUS_FILAMENT_PURGE_LENGTH;
-    }
-    else                              // Cancel filament operation
-      filament_data.action = 0;
-
-    switch (preheat_option) {
-      case 0: // Load PLA
-        #ifdef PREHEAT_1_TEMP_HOTEND
-          e_temp = PREHEAT_1_TEMP_HOTEND;
-        #endif
-        break;
-      case 1: // Load ABS
-        TERN_(PREHEAT_2_TEMP_HOTEND, e_temp = PREHEAT_2_TEMP_HOTEND);
-        break;
-      case 2: // Load PET
-        #ifdef PREHEAT_3_TEMP_HOTEND
-          e_temp = PREHEAT_3_TEMP_HOTEND;
-        #endif
-        break;
-      case 3: // Load FLEX
-        #ifdef PREHEAT_4_TEMP_HOTEND
-          e_temp = PREHEAT_4_TEMP_HOTEND;
-        #endif
-        break;
-      case 9: // Cool down
-      default:
-        e_temp = 0;
-        break;
-    }
-
-    if (filament_data.action == 0) { // Go back to utility screen
-      #if HOTENDS >= 1
-        thermalManager.setTargetHotend(e_temp, ExtUI::extruder_t::E0);
-      #endif
-      #if HOTENDS >= 2
-        thermalManager.setTargetHotend(e_temp, ExtUI::extruder_t::E1);
-      #endif
-      GotoScreen(DGUSLCD_SCREEN_UTILITY);
-    }
-    else { // Go to the preheat screen to show the heating progress
-      switch (var.VP) {
-        default: return;
-        #if HOTENDS >= 1
-          case VP_E0_FILAMENT_LOAD_UNLOAD:
-            filament_data.extruder = ExtUI::extruder_t::E0;
-            thermalManager.setTargetHotend(e_temp, filament_data.extruder);
-            break;
-        #endif
-        #if HOTENDS >= 2
-          case VP_E1_FILAMENT_LOAD_UNLOAD:
-            filament_data.extruder = ExtUI::extruder_t::E1;
-            thermalManager.setTargetHotend(e_temp, filament_data.extruder);
-          break;
-        #endif
-      }
-      GotoScreen(DGUSLCD_SCREEN_FILAMENT_HEATING);
-    }
-  }
-  */
-
-  //Elsan old version from Xlite.
   void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM("HandleFilamentOption");
 
@@ -1187,19 +1113,18 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     filament_data.processed_length = 0;
     filament_data.waiting_confirmation = false;
     uint16_t preheat_option = swap16(*(uint16_t*)val_ptr);
-    if (preheat_option <= 8)          // Load filament type
+    if (preheat_option <= 8)           // Load filament type
       filament_data.action = 1;
-    else if (preheat_option >= 20) {  // Purge filament type
+    else if (preheat_option >= 20) {   // Purge filament type
       preheat_option = ExtUI::getMaterialType(); // get from eeprom
       filament_data.action = 3;
-    } else if (preheat_option >= 10) {  // Unload filament type
+    } else if (preheat_option >= 10) { // Unload filament type
       preheat_option = ExtUI::getMaterialType(); // get from eeprom
       filament_data.action = 2;
       filament_data.purge_length = DGUS_FILAMENT_PURGE_LENGTH;
 
-      queue.inject_P(PSTR("G92 E0"));     //Elsan reset E motor position.
-    } else                              // Cancel filament operation
-      filament_data.action = 0;
+      queue.inject_P(PSTR("G92 E0")); //Elsan reset E motor position.
+    } else filament_data.action = 0;   // Cancel filament operation
 
     switch (preheat_option) {
       case 0: // Load PLA
@@ -1257,43 +1182,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     }
   }
 
-  //Elsan new version.  
-  /*
-  void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
-    DEBUG_ECHOLNPGM("HandleFilamentLoadUnload");
-    if (filament_data.action <= 0) return;
-
-    // If we close to the target temperature, we can start load or unload the filament
-    if (thermalManager.hotEnoughToExtrude(filament_data.extruder) && \
-       thermalManager.targetHotEnoughToExtrude(filament_data.extruder)) {
-      float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME;
-
-      if (filament_data.action == 1) { // load filament
-        if (!filament_data.heated) {
-          GotoScreen(DGUSLCD_SCREEN_FILAMENT_LOADING);
-          filament_data.heated = true;
-        }
-        movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder)+movevalue;
-      }
-      else { // unload filament
-        if (!filament_data.heated) {
-          GotoScreen(DGUSLCD_SCREEN_FILAMENT_UNLOADING);
-          filament_data.heated = true;
-        }
-        // Before unloading extrude to prevent jamming
-        if (filament_data.purge_length >= 0) {
-          movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) + movevalue;
-          filament_data.purge_length -= movevalue;
-        }
-        else
-          movevalue = ExtUI::getAxisPosition_mm(filament_data.extruder) - movevalue;
-      }
-      ExtUI::setAxisPosition_mm(movevalue, filament_data.extruder);
-    }
-  }
-  */
-
-  //Elsan version from previous Xlite.
   void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
     DEBUG_ECHOLNPGM("HandleFilamentLoadUnload");
     if (filament_data.action <= 0 || filament_data.waiting_confirmation) return;
@@ -1324,9 +1212,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
           thermalManager.setTargetHotend(0, ExtUI::extruder_t::E1);
         #endif
 
-        //filament_data.processed_length=0; //Elsan
-        //filament_data.purge_length = 0;   //Elsan
-        //queue.inject_P(PSTR("G92 E0"));     //Elsan reset E motor position.
         GotoScreen(DGUSLCD_SCREEN_UTILITY);
         return;
       }
@@ -1365,7 +1250,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     }
   }
 
-  //Elsan
   void DGUSScreenHandler::HandleSDFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM(" HandleSDFilamentOption");
     uint16_t option = swap16(*(uint16_t*)val_ptr);
@@ -1506,10 +1390,14 @@ void DGUSScreenHandler::HandleFilamentConfirmation(DGUS_VP_Variable &var, void *
 
 void DGUSScreenHandler::HandleFilamentInit(DGUS_VP_Variable &var, void *val_ptr) {
     UNUSED(var); UNUSED(val_ptr);
-    queue.inject_P(PSTR("G28 O\nG90\nG1 X10 Y0 Z100 F4200"));
-    // No need to move home. Just go up 30
-    //queue.inject_P(PSTR("G91\nG1 Z30 F4200\nG90"));
-  }
+    char buf[64] = {0};
+    sprintf(buf, "G28 O"); // Home if needed.
+    queue.enqueue_one_now(buf);
+    sprintf(buf, "G90"); // absolute mode.
+    queue.enqueue_one_now(buf);
+    sprintf(buf, "G1 X%d Y%d Z%d F4200", X_MAX_POS / 2, Y_MAX_POS / 2, Z_MAX_POS); // center position
+    queue.enqueue_one_now(buf);
+}
 
 void DGUSScreenHandler::HandleGoToCalibrationPoints(DGUS_VP_Variable &var, void *val_ptr) {
   DEBUG_ECHOLNPGM("HandleGoToCalibrationPoints");
@@ -1520,23 +1408,8 @@ void DGUSScreenHandler::HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val
   DEBUG_ECHOLNPGM("HandleGoToMaximumPoints");
 
   char buf[32] = {0};
-  /*
   queue.inject_P(PSTR("G28"));
-  sprintf(buf, "G1 Z%d F4200", Z_MAX_POS);
-  queue.enqueue_one_now(buf);
-  sprintf(buf, "G1 X%d Y%d F4200", 0, 0);
-  queue.enqueue_one_now(buf);
-  sprintf(buf, "G1 X%d Y%d F4200", 0, Y_BED_SIZE);
-  queue.enqueue_one_now(buf);
-  sprintf(buf, "G1 X%d Y%d F4200", X_BED_SIZE, Y_BED_SIZE);
-  queue.enqueue_one_now(buf);
-  sprintf(buf, "G1 X%d Y%d Z5 F4200", X_BED_SIZE, 0);
-  queue.enqueue_one_now(buf);
-  */
 
-  queue.inject_P(PSTR("G28"));
-  //queue.enqueue_one_now(PSTR("G28")); //Elsan
-  
   sprintf(buf, "G0 Z%d F4200", Z_MAX_POS);
   queue.enqueue_one_now(buf);
   
@@ -1544,25 +1417,13 @@ void DGUSScreenHandler::HandleGoToMaximumPoints(DGUS_VP_Variable &var, void *val
   queue.enqueue_one_now(buf);
   
   sprintf(buf, "G0 X%d Y%d F4200", 0, Y_BED_SIZE);  //Works
-  //snprintf_P(buf, 32, PSTR("G0 X%d Y%d F4200"), 0, Y_BED_SIZE);
   queue.enqueue_one_now(buf);
   
   buf[0]=0;
   sprintf(buf, "G0 X%d Y%d F4200", X_BED_SIZE, Y_BED_SIZE);
   queue.enqueue_one_now(buf); //Crash
-  //queue.enqueue_one_P(buf);
-  //gcode.process_subcommands_now_P(buf); //problematic
-  //queue.enqueue_one_now(PSTR("G0 X190 Y190 F4200"));  //Works  
-  //HAL_Delay(100); //Test
-  
+
   buf[0]=0;
-  //sprintf(buf, "G0 X%d Y%d Z5 F4200", X_BED_SIZE, 0);
-  //queue.enqueue_one_now(buf); //Crash
-  //queue.enqueue_one_P(buf);
-  //queue.enqueue_now_P(buf); //Crash
-  //queue.inject_P(buf);
-  //queue.inject_P(PSTR("G0 X190 Y190 Z5 F4200"));  //Bad
-  //queue.enqueue_one_now(PSTR("G0 X190 Y190 Z5 F4200")); //Disable for the time being. It seems that queue is not enough.
 }
 
 bool fanStatus = false;
