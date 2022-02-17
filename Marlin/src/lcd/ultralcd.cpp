@@ -25,7 +25,9 @@
 #ifdef LED_BACKLIGHT_TIMEOUT
   #include "../feature/leds/leds.h"
 #endif
-
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../feature/leds/printer_event_leds.h"
+#endif
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "../feature/host_actions.h"
 #endif
@@ -1494,6 +1496,9 @@ void MarlinUI::update() {
     print_job_timer.stop();
     set_status_P(GET_TEXT(MSG_PRINT_ABORTED));
     TERN_(HAS_LCD_MENU, return_to_status());
+    #if ENABLED(PRINTER_EVENT_LEDS)
+      printerEventLEDs.onPrintAborted();
+    #endif
   }
 
   #if ANY(PARK_HEAD_ON_PAUSE, SDSUPPORT)

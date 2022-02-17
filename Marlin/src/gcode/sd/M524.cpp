@@ -31,6 +31,10 @@ extern DGUSScreenHandler ScreenHandler; //Elsan
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../../feature/leds/printer_event_leds.h"
+#endif
+
 /**
  * M524: Abort the current SD print job (started with M24)
  */
@@ -40,7 +44,11 @@ void GcodeSuite::M524() {
     card.flag.abort_sd_printing = true;
   else if (/*card.isMounted()*/1)
     card.closefile();
-  
+
+#if ENABLED(PRINTER_EVENT_LEDS)
+  printerEventLEDs.onPrintAborted();
+#endif
+
   ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);  //Elsan DGUS screen not updated after abort from XDesktop.
 }
 

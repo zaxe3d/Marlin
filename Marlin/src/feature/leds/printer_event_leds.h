@@ -30,28 +30,23 @@
 
 class PrinterEventLEDs {
 private:
-  static uint8_t old_intensity;
 
   #if HAS_LEDS_OFF_FLAG
     static bool leds_off_after_print;
   #endif
 
   static inline void set_done() {
-    #if ENABLED(LED_COLOR_PRESETS)
-      leds.set_default();
-    #else
-      leds.set_off();
-    #endif
+    leds.set_blue();
   }
 
 public:
   #if HAS_TEMP_HOTEND
-    static inline LEDColor onHotendHeatingStart() { old_intensity = 0; return leds.get_color(); }
+    static inline LEDColor onHotendHeatingStart() { return leds.get_color(); }
     static void onHotendHeating(const float &start, const float &current, const float &target);
   #endif
 
   #if HAS_HEATED_BED
-    static inline LEDColor onBedHeatingStart() { old_intensity = 127; return leds.get_color(); }
+    static inline LEDColor onBedHeatingStart() { return leds.get_color(); }
     static void onBedHeating(const float &start, const float &current, const float &target);
   #endif
 
@@ -70,6 +65,10 @@ public:
         safe_delay(2000);
         set_done();
       #endif
+    }
+
+    static inline void onPrintAborted() {
+      set_done();
     }
 
     static inline void onResumeAfterWait() {

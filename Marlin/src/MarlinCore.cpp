@@ -204,6 +204,10 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef *hi2c);
   #include "feature/direct_stepping.h"
 #endif
 
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "feature/leds/printer_event_leds.h"
+#endif
+
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "feature/host_actions.h"
 #endif
@@ -581,7 +585,10 @@ void startOrResumeJob() {
     #ifdef EVENT_GCODE_SD_ABORT
       queue.inject_P(PSTR(EVENT_GCODE_SD_ABORT)); //Elsan dis G28XY will crash with no HW.
     #endif
-    
+    #if ENABLED(PRINTER_EVENT_LEDS)
+      printerEventLEDs.onPrintAborted();
+    #endif
+
     TERN_(PASSWORD_AFTER_SD_PRINT_ABORT, password.lock_machine());
   }
 

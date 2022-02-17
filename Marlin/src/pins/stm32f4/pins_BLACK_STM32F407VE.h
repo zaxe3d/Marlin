@@ -66,10 +66,10 @@
 // Limit Switches
 //
 //elsan
-#define X_MIN_PIN                           PB3 //PE2//PC13 elsan same as X_DIAG_PIN
+#define X_MIN_PIN                           PE10 //PE2//PC13 elsan same as X_DIAG_PIN
 //#define X_MAX_PIN                           PA15
 //#define Y_MIN_PIN                           PE6//PE1//PA5 elsan same as Y_DIAG_PIN
-#define Y_MAX_PIN                           PD0
+#define Y_MAX_PIN                           PE9
 #define Z_MIN_PIN                           PE7 //PA0//PD14 PINDA
 #define Z_MAX_PIN                           PE13
 
@@ -122,7 +122,7 @@
 #define TEMP_PROBE_PIN                      PA4 //PINDA
 
 #ifndef TEMP_CHAMBER_PIN
-  //#define TEMP_CHAMBER_PIN                  PC3   // TC
+  #define TEMP_CHAMBER_PIN                  PB1   // TC
 #endif
 
 //
@@ -136,7 +136,7 @@
 #define FAN_PIN                             PB8 //PB9//PE11//PE9   // Fan0
 //#define FAN1_PIN                            PB9 //PB8//PE9//PE11   // Fan1
 //#define FAN2_PIN                            PE13  // Fan2
-//#define FAN3_PIN                            PE14  // Fan3
+//#define FAN3_PIN                            PB10  // Fan3
 
 //
 // Misc. Functions

@@ -130,8 +130,8 @@ typedef struct LEDColor {
   #define LEDColorOrange()        LEDColor(255,  80,   0)
   #define LEDColorYellow()        LEDColor(255, 255,   0)
 #endif
-#define LEDColorGreen()           LEDColor(  0, 255,   0)
-#define LEDColorBlue()            LEDColor(  0,   0, 255)
+#define LEDColorGreen()           LEDColor(  5, 255,  25)
+#define LEDColorBlue()            LEDColor(  0,  55, 170)
 #define LEDColorIndigo()          LEDColor(  0, 255, 255)
 #define LEDColorViolet()          LEDColor(255,   0, 255)
 #if HAS_WHITE_LED && DISABLED(RGB_LED)
@@ -171,6 +171,7 @@ public:
   static inline void set_off()   { set_color(LEDColorOff()); }
   static inline void set_green() { set_color(LEDColorGreen()); }
   static inline void set_white() { set_color(LEDColorWhite()); }
+  static inline void set_blue()     { set_color(LEDColorBlue()); }
 
   #if ENABLED(LED_COLOR_PRESETS)
     static const LEDColor defaultLEDColor;
@@ -178,7 +179,6 @@ public:
     static inline void set_red()      { set_color(LEDColorRed()); }
     static inline void set_orange()   { set_color(LEDColorOrange()); }
     static inline void set_yellow()   { set_color(LEDColorYellow()); }
-    static inline void set_blue()     { set_color(LEDColorBlue()); }
     static inline void set_indigo()   { set_color(LEDColorIndigo()); }
     static inline void set_violet()   { set_color(LEDColorViolet()); }
   #endif
@@ -228,6 +228,7 @@ extern LEDLights leds;
     static inline void set_off()   { set_color(LEDColorOff()); }
     static inline void set_green() { set_color(LEDColorGreen()); }
     static inline void set_white() { set_color(LEDColorWhite()); }
+    static inline void set_blue()     { set_color(LEDColorBlue()); }
 
     #if ENABLED(NEO2_COLOR_PRESETS)
       static const LEDColor defaultLEDColor;
@@ -235,7 +236,6 @@ extern LEDLights leds;
       static inline void set_red()      { set_color(LEDColorRed()); }
       static inline void set_orange()   { set_color(LEDColorOrange()); }
       static inline void set_yellow()   { set_color(LEDColorYellow()); }
-      static inline void set_blue()     { set_color(LEDColorBlue()); }
       static inline void set_indigo()   { set_color(LEDColorIndigo()); }
       static inline void set_violet()   { set_color(LEDColorViolet()); }
     #endif
