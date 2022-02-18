@@ -38,6 +38,9 @@
 #include "../../../../sd/cardreader.h"
 #include "../../../../libs/duration_t.h"
 #include "../../../../module/printcounter.h"
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../../../../feature/leds/printer_event_leds.h"
+#endif
 
 #include "../../module/settings.h"  //Elsan
 #include "../../../gcode/gcode.h"
@@ -1523,6 +1526,9 @@ bool DGUSScreenHandler::loop() {
   }
 
   #if ENABLED(SHOW_BOOTSCREEN)
+    #if ENABLED(PRINTER_EVENT_LEDS)
+      leds.set_blue();
+    #endif
     static bool booted = false;
     if (!booted && TERN0(POWER_LOSS_RECOVERY, recovery.valid()))
       booted = true;
