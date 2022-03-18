@@ -23,8 +23,8 @@
 #include "../gcode.h"
 #include "../../core/serial.h"
 
-#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
+#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"
+#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h"
 char WIFI_IP[20]; //Elsan
 extern char ETH_IP[];
 
@@ -76,9 +76,9 @@ void GcodeSuite::M118() {
 
   if(strstr(p,"WIFI_IP")) {
     strcpy(WIFI_IP,p); //Elsan
-    //dgusdisplay.WriteVariable(VP_SD_Print_Filename, fname2, VP_SD_FileName_LEN, true);  //Elsan
-    dgusdisplay.WriteVariable(0x3900, WIFI_IP+8, 32, true);  //Elsan
-    dgusdisplay.WriteVariable(0x3932, ETH_IP, 32, true);  //Elsan
+    dgusdisplay.WriteVariable(VP_WIFI_ADDRESS, WIFI_IP + 8, 32, true);
+    dgusdisplay.WriteVariable(VP_ETH_ADDRESS, ETH_IP, 32, true);
+    dgusdisplay.WriteVariable(VP_WIFI_AVAILABLE, static_cast<uint16_t>(1));
   }
 
   TERN_(HAS_MULTI_SERIAL, serial_port_index = old_serial);

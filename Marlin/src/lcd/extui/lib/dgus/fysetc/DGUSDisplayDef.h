@@ -326,6 +326,10 @@ constexpr uint16_t VP_BED_PID_D = 0x3714;
 // Wating screen status
 constexpr uint16_t VP_WAITING_STATUS = 0x3800;
 
+constexpr uint16_t VP_WIFI_ADDRESS = 0x3900;
+constexpr uint16_t VP_ETH_ADDRESS = 0x3932;
+constexpr uint16_t VP_WIFI_AVAILABLE = 0x3864; // at the moment , 1 byte unsigned int (bool)
+
 // SPs for certain variables...
 // located at 0x5000 and up
 // Not used yet!
