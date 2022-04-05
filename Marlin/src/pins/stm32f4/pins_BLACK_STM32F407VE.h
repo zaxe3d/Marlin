@@ -66,11 +66,11 @@
 // Limit Switches
 //
 //elsan
-#define X_MIN_PIN                           PE10 //PE2//PC13 elsan same as X_DIAG_PIN
+#define X_MIN_PIN                           PE11
 //#define X_MAX_PIN                           PA15
 //#define Y_MIN_PIN                           PE6//PE1//PA5 elsan same as Y_DIAG_PIN
 #define Y_MAX_PIN                           PE9
-#define Z_MIN_PIN                           PE7 //PA0//PD14 PINDA
+#define Z_MIN_PIN                           PE7
 #define Z_MAX_PIN                           PE13
 
 //

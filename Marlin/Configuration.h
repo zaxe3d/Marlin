@@ -2381,9 +2381,9 @@
 //#define RGBW_LED
 
 #if EITHER(RGB_LED, RGBW_LED)
-  #define RGB_LED_R_PIN PD12
-  #define RGB_LED_G_PIN PC8
-  #define RGB_LED_B_PIN PD13
+  #define RGB_LED_R_PIN PC8
+  #define RGB_LED_G_PIN PC7
+  #define RGB_LED_B_PIN PC6
   //#define RGB_LED_W_PIN -1
 #endif
 
