@@ -78,7 +78,7 @@ void GcodeSuite::M118() {
     strcpy(WIFI_IP,p); //Elsan
     dgusdisplay.WriteVariable(VP_WIFI_ADDRESS, WIFI_IP + 8, 32, true);
     dgusdisplay.WriteVariable(VP_ETH_ADDRESS, ETH_IP, 32, true);
-    dgusdisplay.WriteVariable(VP_WIFI_AVAILABLE, static_cast<uint16_t>(strstr(p, "-") ? 0 : 1));
+    dgusdisplay.WriteVariable(VP_WIFI_AVAILABLE, static_cast<uint16_t>(strstr(WIFI_IP, "unset") != NULL ? 0 : 1));
   }
 
   TERN_(HAS_MULTI_SERIAL, serial_port_index = old_serial);
