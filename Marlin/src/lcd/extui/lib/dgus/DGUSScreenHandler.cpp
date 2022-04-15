@@ -166,8 +166,7 @@ void DGUSScreenHandler::DGUSLCD_SendPrintProgressBarToDisplay(DGUS_VP_Variable &
   // don't go to 100 since we don't have that much on dgus
   uint16_t tmp = _MIN(99, ExtUI::getProgress_percent());
   tmp = int(tmp / 10);
-  uint16_t data_to_send = swap16(tmp);
-  dgusdisplay.WriteVariable(var.VP, /*data_to_send*/tmp);
+  dgusdisplay.WriteVariable(var.VP, tmp);
 }
 
 // Send the current print time to the display.
@@ -1526,15 +1525,15 @@ bool DGUSScreenHandler::loop() {
   }
 
   #if ENABLED(SHOW_BOOTSCREEN)
-    #if ENABLED(PRINTER_EVENT_LEDS)
-      leds.set_blue();
-    #endif
     static bool booted = false;
     if (!booted && TERN0(POWER_LOSS_RECOVERY, recovery.valid()))
       booted = true;
     if (!booted && ELAPSED(ms, BOOTSCREEN_TIMEOUT)) {
       booted = true;
       GotoScreen(DGUSLCD_SCREEN_MAIN);
+      #if ENABLED(PRINTER_EVENT_LEDS)
+        leds.set_blue();
+      #endif
     }
   #endif
   return IsScreenComplete();

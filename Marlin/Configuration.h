@@ -497,13 +497,13 @@
   #if ENABLED(PID_PARAMS_PER_HOTEND)
     // Specify between 1 and HOTENDS values per array.
     // If fewer than EXTRUDER values are provided, the last element will be repeated.
-    #define DEFAULT_Kp_LIST {  28.04,  28.04 } //GOKALP {  22.20,  22.20 }
-    #define DEFAULT_Ki_LIST {  1.52,  1.52 } //GOKALP {   1.08,   1.08 }
-    #define DEFAULT_Kd_LIST {  128.96,  128.96 } //GOKALP { 114.00, 114.00 }
+    #define DEFAULT_Kp_LIST {  17.64,  17.64 } // {  28.04,  28.04 }
+    #define DEFAULT_Ki_LIST {  1.00,  1.00 } //  { 1.52,  1.52 }
+    #define DEFAULT_Kd_LIST {  77.63,  77.63 } // {  128.96,  128.96 }
   #else
-      #define DEFAULT_Kp 28.04
-      #define DEFAULT_Ki 1.52
-      #define DEFAULT_Kd 128.96
+    #define DEFAULT_Kp 17.64 //alican // 28.04
+    #define DEFAULT_Ki 1.00 //alican // 1.52
+    #define DEFAULT_Kd 77.63 //alican // 128.96
 
   #endif
 #endif // PIDTEMP
@@ -637,7 +637,7 @@
   //#define ENDSTOPPULLUP_XMAX
   //#define ENDSTOPPULLUP_YMAX
   //#define ENDSTOPPULLUP_ZMAX
-  //#define ENDSTOPPULLUP_XMIN
+  #define ENDSTOPPULLUP_XMIN
   //#define ENDSTOPPULLUP_YMIN
   //#define ENDSTOPPULLUP_ZMIN
   //#define ENDSTOPPULLUP_ZMIN_PROBE
@@ -748,13 +748,13 @@
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
 
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 100, 400, 465}
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 100, 100, 400, 418.768}
 /**
  * Default Max Feed Rate (mm/s)
  * Override with M203
  *                                      X, Y, Z, E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 150, 150, 15, 80 }  //GOKALP  { 200, 200, 15, 80 }
+#define DEFAULT_MAX_FEEDRATE         { 150, 150, 15, 80 }
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -782,9 +782,9 @@
  *   M204 R    Retract Acceleration
  *   M204 T    Travel Acceleration
  */
-#define DEFAULT_ACCELERATION          800    // X, Y, Z and E acceleration for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  1000    // E acceleration for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   1000    // X, Y, Z acceleration for travel (non printing) moves
+#define DEFAULT_ACCELERATION          800       // X, Y, Z and E acceleration for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  1000      // E acceleration for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   800       // X, Y, Z acceleration for travel (non printing) moves
 
 /**
  * Default Jerk limits (mm/s)
@@ -999,7 +999,7 @@
 //#define PROBING_MARGIN 10
 
 // X and Y axis travel speed (mm/min) between probes
-#define XY_PROBE_SPEED (100*60) //baki
+#define XY_PROBE_SPEED (50*50) //alican //(100*60) //baki
 
 // Feedrate (mm/min) for the first approach when double-probing (MULTIPLE_PROBING == 2)
 #define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
@@ -1129,12 +1129,12 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 230
-#define Y_BED_SIZE 245
+#define X_BED_SIZE 220 //230 => 220
+#define Y_BED_SIZE 230 //245 => 230
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS -6
-#define Y_MIN_POS -6
+#define Y_MIN_POS 0
 #define Z_MIN_POS 0
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
@@ -1288,8 +1288,8 @@
 #if EITHER(AUTO_BED_LEVELING_LINEAR, AUTO_BED_LEVELING_BILINEAR)
 
   // Set the number of grid points per dimension.
-  #define GRID_MAX_POINTS_X 6
-  #define GRID_MAX_POINTS_Y 4
+  #define GRID_MAX_POINTS_X 6 //6
+  #define GRID_MAX_POINTS_Y 5 //4
 
   // Probe along the Y axis, advancing X after each column
   //#define PROBE_Y_FIRST
@@ -1336,7 +1336,7 @@
   //=================================== Mesh ==================================
   //===========================================================================
 
-  #define MESH_INSET 10          // Set Mesh bounds as an inset region of the bed
+  #define MESH_INSET 5 //10          // Set Mesh bounds as an inset region of the bed
   #define GRID_MAX_POINTS_X 5    // Don't use more than 7 points per axis, implementation limited.
   #define GRID_MAX_POINTS_Y GRID_MAX_POINTS_X
 
@@ -1395,8 +1395,8 @@
 #define Z_SAFE_HOMING
 
 #if ENABLED(Z_SAFE_HOMING)
-  #define Z_SAFE_HOMING_X_POINT 20
-  #define Z_SAFE_HOMING_Y_POINT 220
+  #define Z_SAFE_HOMING_X_POINT 30 // GO + Mahmut - probe was halfway outside the plate
+  #define Z_SAFE_HOMING_Y_POINT 210 // GO + Mahmut - probe was halfway outside the plate
 #endif
 
 // Homing speeds (mm/min)
@@ -2181,10 +2181,10 @@
 //#define DGUS_LCD_UI_ORIGIN
 #define DGUS_LCD_UI_FYSETC
 //#define DGUS_LCD_UI_HIPRECY
-//#define DEBUG_DGUSLCD //Elsan
+//#define DEBUG_DGUSLCD
 
-#define FIRST_LAYER_CAL //Elsan
-//#define BABYSTEPPING  //Elsan
+#define FIRST_LAYER_CAL
+#define BABYSTEPPING
 
 // Preheat Constants
 #define PREHEAT_PLA_HOTEND 210

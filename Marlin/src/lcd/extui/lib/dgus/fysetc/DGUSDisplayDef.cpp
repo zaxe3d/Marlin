@@ -516,8 +516,8 @@ const struct DGUS_VP_Variable ListOfVP[] PROGMEM = {
   VPHELPER(VP_ZPos, &current_position.z, nullptr, ScreenHandler.DGUSLCD_SendFloatAsLongValueToDisplay<2>),
 
   // Print Progress
-  VPHELPER(VP_PrintProgress_Percentage, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressToDisplay ),
-  VPHELPER(VP_PrintProgress_Progressbar, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressBarToDisplay ),
+  VPHELPER(VP_PrintProgress_Percentage, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressToDisplay),
+  VPHELPER(VP_PrintProgress_Progressbar, nullptr, nullptr, ScreenHandler.DGUSLCD_SendPrintProgressBarToDisplay),
 
   // Print Time
   VPHELPER_STR(VP_PrintTime, nullptr, VP_PrintTime_LEN, nullptr, ScreenHandler.DGUSLCD_SendPrintTimeToDisplay),

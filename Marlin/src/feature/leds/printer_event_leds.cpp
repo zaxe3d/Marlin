@@ -52,7 +52,7 @@ PrinterEventLEDs printerEventLEDs;
 #if HAS_TEMP_HOTEND
 
   void PrinterEventLEDs::onHotendHeating(const float &start, const float &current, const float &target) {
-      pel_set_rgb(255, 2, 0);
+    leds.set_red();
   }
 
 #endif
@@ -60,7 +60,7 @@ PrinterEventLEDs printerEventLEDs;
 #if HAS_HEATED_BED
 
   void PrinterEventLEDs::onBedHeating(const float &start, const float &current, const float &target) {
-    pel_set_rgb(255, 2, 0);
+    leds.set_red();
   }
 #endif
 

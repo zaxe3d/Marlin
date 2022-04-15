@@ -132,6 +132,7 @@ typedef struct LEDColor {
 #endif
 #define LEDColorGreen()           LEDColor(  5, 255,  25)
 #define LEDColorBlue()            LEDColor(  0,  55, 170)
+#define LEDColorRed()             LEDColor(255,   2,   0)
 #define LEDColorIndigo()          LEDColor(  0, 255, 255)
 #define LEDColorViolet()          LEDColor(255,   0, 255)
 #if HAS_WHITE_LED && DISABLED(RGB_LED)
@@ -172,6 +173,7 @@ public:
   static inline void set_green() { set_color(LEDColorGreen()); }
   static inline void set_white() { set_color(LEDColorWhite()); }
   static inline void set_blue()     { set_color(LEDColorBlue()); }
+  static inline void set_red()     { set_color(LEDColorRed()); }
 
   #if ENABLED(LED_COLOR_PRESETS)
     static const LEDColor defaultLEDColor;
