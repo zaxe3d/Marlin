@@ -497,13 +497,13 @@
   #if ENABLED(PID_PARAMS_PER_HOTEND)
     // Specify between 1 and HOTENDS values per array.
     // If fewer than EXTRUDER values are provided, the last element will be repeated.
-    #define DEFAULT_Kp_LIST {  17.64,  17.64 } // {  28.04,  28.04 }
-    #define DEFAULT_Ki_LIST {  1.00,  1.00 } //  { 1.52,  1.52 }
-    #define DEFAULT_Kd_LIST {  77.63,  77.63 } // {  128.96,  128.96 }
+    #define DEFAULT_Kp_LIST {  18.72,  18.72 } // {  28.04,  28.04 }
+    #define DEFAULT_Ki_LIST {  1.04,  1.04 } //  { 1.52,  1.52 }
+    #define DEFAULT_Kd_LIST {  84.62,  84.62 } // {  128.96,  128.96 }
   #else
-    #define DEFAULT_Kp 17.64 //alican // 28.04
-    #define DEFAULT_Ki 1.00 //alican // 1.52
-    #define DEFAULT_Kd 77.63 //alican // 128.96
+    #define DEFAULT_Kp 18.72 // 17.64
+    #define DEFAULT_Ki 1.04 // 1.00
+    #define DEFAULT_Kd 84.62 // 77.63
 
   #endif
 #endif // PIDTEMP
@@ -543,9 +543,9 @@
 
   // 120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   // from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  #define DEFAULT_bedKp 16.56 // GOKALP 33.49
-  #define DEFAULT_bedKi 0.48 // GOKALP 0.97
-  #define DEFAULT_bedKd 383.31 // GOKALP 769.55
+  #define DEFAULT_bedKp 39.44 // 16.56
+  #define DEFAULT_bedKi 1.25 // 0.48
+  #define DEFAULT_bedKd 830.81 // 383.31
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #endif // PIDTEMPBED
@@ -1099,7 +1099,7 @@
 // @section extruder
 
 // For direct drive extruder v9 set to true, for geared extruder set to false.
-//#define INVERT_E0_DIR false   //GOKALP Xlite+2 / dual gear red
+//#define INVERT_E0_DIR false
 #define INVERT_E0_DIR false
 #define INVERT_E1_DIR false
 #define INVERT_E2_DIR false
@@ -1129,7 +1129,7 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 230
+#define X_BED_SIZE 222 // 230
 #define Y_BED_SIZE 245
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
