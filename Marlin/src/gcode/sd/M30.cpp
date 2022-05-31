@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -31,8 +31,8 @@
  * M30 <filename>: Delete SD Card file
  */
 void GcodeSuite::M30() {
-  if (/*card.isMounted()*/1) {
-    //card.closefile(); //Elsan dis
+  if (card.isMounted()) {
+    card.closefile();
     card.removeFile(parser.string_arg);
   }
 }

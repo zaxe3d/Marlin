@@ -16,15 +16,11 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 #include "../../inc/MarlinConfig.h"
-#include "../../lcd/extui/lib/dgus/fysetc/DGUSDisplayDef.h" //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h"
-
-extern DGUSScreenHandler ScreenHandler; //Elsan
 
 #if ENABLED(SDSUPPORT)
 
@@ -38,10 +34,7 @@ void GcodeSuite::M524() {
 
   if (IS_SD_PRINTING())
     card.flag.abort_sd_printing = true;
-  else if (/*card.isMounted()*/1)
-    card.closefile();
-  
-  ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);  //Elsan DGUS screen not updated after abort from XDesktop.
+
 }
 
 #endif // SDSUPPORT

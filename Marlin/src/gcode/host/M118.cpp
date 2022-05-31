@@ -16,17 +16,12 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
 #include "../gcode.h"
 #include "../../core/serial.h"
-
-#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
-char WIFI_IP[64]; //Elsan
-extern char ETH_IP[];
 
 /**
  * M118: Display a message in the host console.
@@ -39,7 +34,7 @@ extern char ETH_IP[];
  */
 void GcodeSuite::M118() {
   bool hasE = false, hasA = false;
-  #if HAS_MULTI_SERIAL
+  #if NUM_SERIAL > 1
     int8_t port = -1; // Assume no redirect
   #endif
   char *p = parser.string_arg;
@@ -49,7 +44,7 @@ void GcodeSuite::M118() {
     switch (p[0]) {
       case 'A': hasA = true; break;
       case 'E': hasE = true; break;
-      #if HAS_MULTI_SERIAL
+      #if NUM_SERIAL > 1
         case 'P': port = p[1] - '0'; break;
       #endif
     }
@@ -57,7 +52,7 @@ void GcodeSuite::M118() {
     while (*p == ' ') ++p;
   }
 
-  #if HAS_MULTI_SERIAL
+  #if NUM_SERIAL > 1
     const int8_t old_serial = serial_port_index;
     if (WITHIN(port, 0, NUM_SERIAL))
       serial_port_index = (
@@ -74,12 +69,7 @@ void GcodeSuite::M118() {
   if (hasA) SERIAL_ECHOPGM("// ");
   SERIAL_ECHOLN(p);
 
-  if(strstr(p,"WIFI_IP")) {
-    strcpy(WIFI_IP,p); //Elsan
-    //dgusdisplay.WriteVariable(VP_SD_Print_Filename, fname2, VP_SD_FileName_LEN, true);  //Elsan
-    dgusdisplay.WriteVariable(0x3900, WIFI_IP+8, 32, true);  //Elsan
-    dgusdisplay.WriteVariable(0x3932, ETH_IP, 32, true);  //Elsan
-  }
-
-  TERN_(HAS_MULTI_SERIAL, serial_port_index = old_serial);
+  #if NUM_SERIAL > 1
+    serial_port_index = old_serial;
+  #endif
 }

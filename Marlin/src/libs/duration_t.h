@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 #pragma once
@@ -127,11 +127,11 @@ struct duration_t {
         m = this->minute() % 60,
         s = this->second() % 60;
 
-    if (y) sprintf_P(buffer, PSTR("%iy %id %ih %im %is"), y, d, h, m, s);
-    else if (d) sprintf_P(buffer, PSTR("%id %ih %im %is"), d, h, m, s);
-    else if (h) sprintf_P(buffer, PSTR("%ih %im %is"), h, m, s);
-    else if (m) sprintf_P(buffer, PSTR("%im %is"), m, s);
-    else sprintf_P(buffer, PSTR("%is"), s);
+    if (y) sprintf_P(buffer, PSTR("%iy %ig %02i:%02i:%02i"), y, d, h, m, s);
+    else if (d) sprintf_P(buffer, PSTR("%ig %02i:%02i:%02i"), d, h, m, s);
+    else if (h) sprintf_P(buffer, PSTR("%02i:%02i:%02i"), h, m, s);
+    else if (m) sprintf_P(buffer, PSTR("00:%02i:%02i"), m, s);
+    else sprintf_P(buffer, PSTR("00:00:%02i"), s);
     return buffer;
   }
 

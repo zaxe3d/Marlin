@@ -16,13 +16,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 #pragma once
 
 enum DGUSLCD_Screens : uint8_t {
-  DGUSLCD_SCREEN_BOOT                =   0,  
+  DGUSLCD_SCREEN_BOOT                =   0,
   DGUSLCD_SCREEN_MAIN                =   1,
   DGUSLCD_SCREEN_STATUS              =   1,
   DGUSLCD_SCREEN_STATUS2             =   1,
@@ -31,6 +31,7 @@ enum DGUSLCD_Screens : uint8_t {
   DGUSLCD_SCREEN_CALIBRATION         =  30,
   DGUSLCD_SCREEN_SKEW_CALIBRATION    =  220,
   DGUSLCD_SCREEN_FIRST_LAYER_CAL     =  32,
+  DGUSLCD_SCREEN_CALIBRATION_DONE    =  36,
   DGUSLCD_SCREEN_CALIBRATION_HEATING =  38,
   DGUSLCD_SCREEN_MOVEMENT_X          =  62,
   DGUSLCD_SCREEN_MOVEMENT_Y          =  63,
@@ -56,16 +57,14 @@ enum DGUSLCD_Screens : uint8_t {
   DGUSLCD_SCREEN_SDPRINTTUNE_TEMP    = 213,
   DGUSLCD_SCREEN_SDPRINTTUNE_FAN     = 214,
   DGUSLCD_SCREEN_SDPRINT_DONE        = 216,
-  DGUSLCD_SCREEN_SDPRINTTUNE         =  75,  
   DGUSLCD_SCREEN_FLC_PREHEAT         =  94,
-  DGUSLCD_SCREEN_FLC_PRINTING        =  96,  
+  DGUSLCD_SCREEN_FLC_PRINTING        =  96,
   DGUSLCD_SCREEN_STEPPERMM           = 212,
   DGUSLCD_SCREEN_PID_E               = 214,
   DGUSLCD_SCREEN_PID_BED             = 218,
   DGUSLCD_SCREEN_Z_OFFSET            = 222,
-  DGUSLCD_SCREEN_INFOS               = 70,
+  DGUSLCD_SCREEN_INFOS               =  70,
   DGUSLCD_SCREEN_CONFIRM             = 240,
-  DGUSLCD_SCREEN_NOUSB               = 241,
   DGUSLCD_SCREEN_KILL                = 250, ///< Kill Screen. Must always be 250 (to be able to display "Error wrong LCD Version")
   DGUSLCD_SCREEN_WAITING             = 251,
   DGUSLCD_SCREEN_POPUP               = 252, ///< special target, popup screen will also return this code to say "return to previous screen"
@@ -136,10 +135,10 @@ constexpr uint16_t VP_MOVE_E1 = 0x2112;
 constexpr uint16_t VP_HOME_ALL = 0x2120;
 constexpr uint16_t VP_MOTOR_LOCK_UNLOK = 0x2130;
 constexpr uint16_t VP_EEPROM_SAVE_RESTORE_SETTINGS = 0x2132;
-constexpr uint16_t VP_END_PREHEAT = 0x2134; //Elsan
-constexpr uint16_t VP_MAX_POINTS = 0x2136;  //Elsan
-constexpr uint16_t VP_CALIBRATION_POINTS = 0x2138;  //Elsan
-constexpr uint16_t VP_FAN_ON_OFF = 0x2140;  //Elsan
+constexpr uint16_t VP_END_PREHEAT = 0x2134;
+constexpr uint16_t VP_MAX_POINTS = 0x2136;
+constexpr uint16_t VP_CALIBRATION_POINTS = 0x2138;
+constexpr uint16_t VP_FAN_ON_OFF = 0x2140;
 
 // Power loss recovery
 constexpr uint16_t VP_POWER_LOSS_RECOVERY = 0x2180;
@@ -171,7 +170,7 @@ constexpr uint16_t VP_E1_BED_PREHEAT = 0x2222;
 constexpr uint16_t VP_FIRST_LAYER_CALIBRATION = 0x2296;
 
 // Filament load and unload
-constexpr uint16_t VP_FILAMENT_LOAD_UNLOAD_INIT = 0x2298; // 1 to go to park position before loading/unloading //Elsan
+constexpr uint16_t VP_FILAMENT_LOAD_UNLOAD_INIT = 0x2298; // 1 to go to park position before loading/unloading
 constexpr uint16_t VP_E0_FILAMENT_LOAD_UNLOAD = 0x2300;
 constexpr uint16_t VP_E1_FILAMENT_LOAD_UNLOAD = 0x2302;
 constexpr uint16_t VP_E0_FILAMENT_SD_LOAD_UNLOAD = 0x2304;
@@ -184,7 +183,7 @@ constexpr uint16_t VP_SETTINGS = 0x2400;
 
 // PID autotune
 constexpr uint16_t VP_PID_AUTOTUNE_E0 = 0x2410;
-constexpr uint16_t VP_PID_AUTOTUNE_E1 = 0x2412;
+//constexpr uint16_t VP_PID_AUTOTUNE_E1 = 0x2412;
 //constexpr uint16_t VP_PID_AUTOTUNE_E2 = 0x2414;
 //constexpr uint16_t VP_PID_AUTOTUNE_E3 = 0x2416;
 //constexpr uint16_t VP_PID_AUTOTUNE_E4 = 0x2418;
@@ -199,7 +198,7 @@ constexpr uint16_t VP_Z_FIRST_LAYER_CAL = 0x2500; // Data: 0 - Cancel first laye
 
 // Firmware version on the boot screen.
 constexpr uint16_t VP_MARLIN_VERSION = 0x3000;
-constexpr uint8_t VP_MARLIN_VERSION_LEN = 48 /*16*/;   // there is more space on the display, if needed.
+constexpr uint8_t VP_MARLIN_VERSION_LEN = 48;   // there is more space on the display, if needed.
 
 // Place for status messages.
 constexpr uint16_t VP_M117 = 0x3020;
@@ -208,6 +207,7 @@ constexpr uint8_t VP_M117_LEN = 0x20;
 // Temperatures.
 constexpr uint16_t VP_T_E0_Is = 0x3060;  // 4 Byte Integer
 constexpr uint16_t VP_T_E0_Set = 0x3062; // 2 Byte Integer
+constexpr uint16_t VP_T_E0_Custom_Set = 0x306E;  // 4 Byte Integer
 constexpr uint16_t VP_T_E1_Is = 0x3064;  // 4 Byte Integer
 
 // reserved to support up to 6 Extruders:
@@ -225,6 +225,7 @@ constexpr uint16_t VP_T_E1_Set = 0x3066; // 2 Byte Integer
 
 constexpr uint16_t VP_T_Bed_Is = 0x3080;  // 4 Byte Integer
 constexpr uint16_t VP_T_Bed_Set = 0x3082; // 2 Byte Integer
+constexpr uint16_t VP_T_Bed_Custom_Set = 0x3084;  // 4 Byte Integer
 
 constexpr uint16_t VP_Flowrate_E0 = 0x3090; // 2 Byte Integer
 constexpr uint16_t VP_Flowrate_E1 = 0x3092; // 2 Byte Integer
@@ -249,7 +250,7 @@ constexpr uint16_t VP_ZPos = 0x3114;  // 4 Byte Fixed point number; format xxx.y
 constexpr uint16_t VP_EPos = 0x3120;  // 4 Byte Fixed point number; format xxx.yy
 
 constexpr uint16_t VP_PrintProgress_Percentage = 0x3130; // 2 Byte Integer (0..100)
-constexpr uint16_t VP_PrintProgress_Progressbar = 0x3132;
+constexpr uint16_t VP_PrintProgress_Progressbar = 0x3132; // 2 Byte Integer (0..9)
 
 constexpr uint16_t VP_PrintTime = 0x3140;
 constexpr uint16_t VP_PrintTime_LEN = 32;
@@ -261,9 +262,9 @@ constexpr uint16_t VP_PrintsTotal = 0x3180;
 constexpr uint16_t VP_PrintsTotal_LEN = 16;
 
 // SDCard File Listing
-constexpr uint16_t VP_SD_FileName_LEN = 32; // LEN is shared for all entries. Elsan can't be increased.
+constexpr uint16_t VP_SD_FileName_LEN = 32; // LEN is shared for all entries.
 constexpr uint16_t DGUS_SD_FILESPERSCREEN = 5; // FIXME move that info to the display and read it from there.
-constexpr uint16_t VP_SD_Refresh_List = 0x3198; // Refresh the list //Elsan
+constexpr uint16_t VP_SD_Refresh_List = 0x3198; // Refresh the list
 constexpr uint16_t VP_SD_FileName0 = 0x3200;
 constexpr uint16_t VP_SD_FileName1 = 0x3220;
 constexpr uint16_t VP_SD_FileName2 = 0x3240;
@@ -281,7 +282,7 @@ constexpr uint16_t VP_FAN3_STATUS = 0x3306;
 
 // Heater status
 constexpr uint16_t VP_E0_STATUS = 0x3310;
-constexpr uint16_t VP_E1_STATUS = 0x3312;
+//constexpr uint16_t VP_E1_STATUS = 0x3312;
 //constexpr uint16_t VP_E2_STATUS = 0x3314;
 //constexpr uint16_t VP_E3_STATUS = 0x3316;
 //constexpr uint16_t VP_E4_STATUS = 0x3318;
@@ -301,25 +302,22 @@ constexpr uint16_t VP_E0_STEP_PER_MM = 0x3610;
 constexpr uint16_t VP_E1_STEP_PER_MM = 0x3612;
 //constexpr uint16_t VP_E2_STEP_PER_MM = 0x3614;
 
-constexpr uint16_t VP_XY_DIAG_AC = 0x3616;
-constexpr uint16_t VP_XY_DIAG_BD = 0x3618;
-constexpr uint16_t VP_XY_SIDE_AD = 0x361A;
-constexpr uint16_t VP_XY_SKEW_FACTOR = 0x361C;
-constexpr uint16_t VP_XY_SKEW_CALC = 0x361D;
-
 // PIDs
 constexpr uint16_t VP_E0_PID_P = 0x3700; // at the moment , 2 byte unsigned int , 0~1638.4
 constexpr uint16_t VP_E0_PID_I = 0x3702;
 constexpr uint16_t VP_E0_PID_D = 0x3704;
-constexpr uint16_t VP_E1_PID_P = 0x3706; // at the moment , 2 byte unsigned int , 0~1638.4
-constexpr uint16_t VP_E1_PID_I = 0x3708;
-constexpr uint16_t VP_E1_PID_D = 0x370A;
 constexpr uint16_t VP_BED_PID_P = 0x3710;
 constexpr uint16_t VP_BED_PID_I = 0x3712;
 constexpr uint16_t VP_BED_PID_D = 0x3714;
 
 // Wating screen status
 constexpr uint16_t VP_WAITING_STATUS = 0x3800;
+
+constexpr uint16_t VP_XY_DIAG_AC = 0x3616;
+constexpr uint16_t VP_XY_DIAG_BD = 0x3618;
+constexpr uint16_t VP_XY_SIDE_AD = 0x361A;
+constexpr uint16_t VP_XY_SKEW_FACTOR = 0x361C;
+constexpr uint16_t VP_XY_SKEW_CALC = 0x361D;
 
 // SPs for certain variables...
 // located at 0x5000 and up

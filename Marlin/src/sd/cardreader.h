@@ -16,29 +16,16 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 #pragma once
 
 #include "../inc/MarlinConfig.h"
 
-//extern long int sdpos2; //Elsan
-extern char isUSB_fileopen;
-
-#define IFSD(A,B) TERN(SDSUPPORT,A,B)
-
 #if ENABLED(SDSUPPORT)
 
-#if BOTH(SDCARD_SORT_ALPHA, SDSORT_DYNAMIC_RAM)
-  #define SD_RESORT 1
-#endif
-
-#if ENABLED(SDCARD_RATHERRECENTFIRST) && DISABLED(SDCARD_SORT_ALPHA)
-  #define SD_ORDER(N,C) ((C) - 1 - (N))
-#else
-  #define SD_ORDER(N,C) N
-#endif
+#define SD_RESORT BOTH(SDCARD_SORT_ALPHA, SDSORT_DYNAMIC_RAM)
 
 #define MAX_DIR_DEPTH     10       // Maximum folder depth
 #define MAXDIRNAMELENGTH   8       // DOS folder name size
@@ -63,12 +50,12 @@ typedef struct {
 class CardReader {
 public:
   static card_flags_t flag;                         // Flags (above)
-  static char filename[/*FILENAME_LENGTH*/LONG_FILENAME_LENGTH],            // DOS 8.3 filename of the selected item
+  static char filename[FILENAME_LENGTH],            // DOS 8.3 filename of the selected item
               longFilename[LONG_FILENAME_LENGTH];   // Long name of the selected item
 
   // Fast! binary file transfer
   #if ENABLED(BINARY_FILE_TRANSFER)
-    #if HAS_MULTI_SERIAL
+    #if NUM_SERIAL > 1
       static int8_t transfer_port_index;
     #else
       static constexpr int8_t transfer_port_index = 0;
@@ -86,9 +73,6 @@ public:
   static inline bool isMounted() { return flag.mounted; }
   static void ls();
 
-  // Handle media insert/remove
-  static void manage_media();
-
   // SD Card Logging
   static void openLogFile(char * const path);
   static void write_command(char * const buf);
@@ -102,7 +86,6 @@ public:
   static void openFileRead(char * const path, const uint8_t subcall=0);
   static void openFileWrite(char * const path);
   static void closefile(const bool store_location=false);
-  static bool fileExists(const char * const name);
   static void removeFile(const char * const name);
 
   static inline char* longest_filename() { return longFilename[0] ? longFilename : filename; }
@@ -127,15 +110,19 @@ public:
   static void getAbsFilename(char *dst);
   static void printFilename();
   static void startFileprint();
-  static void endFilePrint(TERN_(SD_RESORT, const bool re_sort=false));
+  static void endFilePrint(
+    #if SD_RESORT
+      const bool re_sort=false
+    #endif
+  );
   static void report_status();
   static inline void pauseSDPrint() { flag.sdprinting = false; }
-  static inline bool isPaused() { return /*isFileOpen()*/isUSB_fileopen && !flag.sdprinting; }  //Elsan
+  static inline bool isPaused() { return isFileOpen() && !flag.sdprinting; }
   static inline bool isPrinting() { return flag.sdprinting; }
   #if HAS_PRINT_PROGRESS_PERMYRIAD
     static inline uint16_t permyriadDone() { return (isFileOpen() && filesize) ? sdpos / ((filesize + 9999) / 10000) : 0; }
   #endif
-  static inline uint8_t percentDone() { return (/*isFileOpen() && filesize*/1) ? sdpos / ((filesize + 99) / 100) : 0; }
+  static inline uint8_t percentDone() { return (isFileOpen() && filesize) ? sdpos / ((filesize + 99) / 100) : 0; }
 
   // Helper for open and remove
   static const char* diveToFile(const bool update_cwd, SdFile*& curDir, const char * const path, const bool echo=false);
@@ -158,14 +145,12 @@ public:
     static void removeJobRecoveryFile();
   #endif
 
-  static inline bool isFileOpen() { return isMounted() && file.isOpen(); }  
+  static inline bool isFileOpen() { return isMounted() && file.isOpen(); }
   static inline uint32_t getIndex() { return sdpos; }
-  static inline uint32_t getFileSize() { return filesize; }
-  static inline bool eof() { return sdpos/*sdpos2*/ >= filesize; }
+  static inline bool eof() { return sdpos >= filesize; }
   static inline void setIndex(const uint32_t index) { sdpos = index; file.seekSet(index); }
   static inline char* getWorkDirName() { workDir.getDosName(filename); return filename; }
-  //static inline int16_t get() { sdpos = file.curPosition(); return (int16_t)file.read(); }
-  static inline int16_t get()   { int16_t out = (int16_t)file.read(); sdpos = file.curPosition(); return out; } //Elsan from Marlin 2.0.8.1
+  static inline int16_t get() { sdpos = file.curPosition(); return (int16_t)file.read(); }
   static inline int16_t read(void* buf, uint16_t nbyte) { return file.isOpen() ? file.read(buf, nbyte) : -1; }
   static inline int16_t write(void* buf, uint16_t nbyte) { return file.isOpen() ? file.write(buf, nbyte) : -1; }
 
@@ -174,7 +159,9 @@ public:
   #if ENABLED(AUTO_REPORT_SD_STATUS)
     static void auto_report_sd_status();
     static inline void set_auto_report_interval(uint8_t v) {
-      TERN_(HAS_MULTI_SERIAL, auto_report_port = serial_port_index);
+      #if NUM_SERIAL > 1
+        auto_report_port = serial_port_index;
+      #endif
       NOMORE(v, 60);
       auto_report_sd_interval = v;
       next_sd_report_ms = millis() + 1000UL * v;
@@ -266,7 +253,7 @@ private:
   #if ENABLED(AUTO_REPORT_SD_STATUS)
     static uint8_t auto_report_sd_interval;
     static millis_t next_sd_report_ms;
-    #if HAS_MULTI_SERIAL
+    #if NUM_SERIAL > 1
       static int8_t auto_report_port;
     #endif
   #endif

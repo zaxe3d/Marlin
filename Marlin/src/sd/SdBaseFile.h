@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 #pragma once
@@ -37,8 +37,6 @@
 #include "SdVolume.h"
 
 #include <stdint.h>
-
-extern /*FSIZE_t*//*DWORD*/unsigned long position;  //Elsan
 
 /**
  * \struct filepos_t
@@ -204,7 +202,7 @@ class SdBaseFile {
   /**
    * \return The current position for a file or directory.
    */
-  uint32_t curPosition() const { return curPosition_/*position*/; } //Elsan if necessary transfer from position to curPosition_.
+  uint32_t curPosition() const { return curPosition_; }
 
   /**
    * \return Current working directory

@@ -34,7 +34,7 @@
   #include "../lcd/extui/ui_api.h"
 #endif
 
-//Material material;
+Material material;
 
 // Below items initialized by settings.load()
 uint8_t Material::type;

@@ -38,8 +38,6 @@
 extern "C" {
 #endif // __cplusplus
 
-#define ARDUINO_BLACK_F407VG
-
 /*----------------------------------------------------------------------------
  *        Pins
  *----------------------------------------------------------------------------*/
@@ -57,17 +55,10 @@ extern "C" {
 #define PD6  9
 #define PD5  10
 #define PD4  11
-
 #define PD3  12
-//#define PD3   (59+/*STM32F4X_ADC_NUM*/16)
-
 #define PD2  13
-
 #define PD1  14
-//#define PD1   (58+/*STM32F4X_ADC_NUM*/16)
 #define PD0  15
-//#define PD0   (57+/*STM32F4X_ADC_NUM*/16)
-
 #define PC12 16
 #define PC11 17
 #define PC10 18
@@ -277,11 +268,11 @@ extern "C" {
 #define NUM_ANALOG_FIRST        75
 
 // On-board LED pin number
-#define LED_D2                  -1//PF10
-#define LED_D1                  -1//PF9
+#define LED_D2                  PF10
+#define LED_D1                  PF9
 
 // Board specific button
-#define BTN_WK_UP                -1//PA0
+#define BTN_WK_UP                PA0
 
 #endif // ARDUINO_BLACK_F407ZE || ARDUINO_BLACK_F407ZG
 
@@ -289,22 +280,22 @@ extern "C" {
 #define LED_GREEN               LED_D2
 
 // On-board user button
-#define BTN_K0                  -1//PE4
-#define BTN_K1                  -1//PE3
+#define BTN_K0                  PE4
+#define BTN_K1                  PE3
 #define USER_BTN                BTN_K0
 
 // Below SPI and I2C definitions already done in the core
 // Could be redefined here if differs from the default one
 // SPI Definitions
-//#define PIN_SPI_MOSI            -1//PB15
-//#define PIN_SPI_MISO            -1//PB14
-//#define PIN_SPI_SCK             -1//PB13
-//#define PIN_SPI_SS              -1//PB12
+#define PIN_SPI_MOSI            PB15
+#define PIN_SPI_MISO            PB14
+#define PIN_SPI_SCK             PB13
+#define PIN_SPI_SS              PB12
 //#define PIN_SPI_SS1             PB0 // W25Q16 (on board flash)
 
 // I2C Definitions
-#define PIN_WIRE_SDA            PC9//PB7
-#define PIN_WIRE_SCL            PA8//PB6
+#define PIN_WIRE_SDA            PB7
+#define PIN_WIRE_SCL            PB6
 
 // Timer Definitions
 //Do not use timer used by PWM pins when possible. See PinMap_PWM in PeripheralPins.c
@@ -314,14 +305,8 @@ extern "C" {
 #define TIMER_SERVO             TIM2  //TODO: advanced-control timers don't work
 
 // UART Definitions
-#define ENABLE_HWSERIAL1 
-#define ENABLE_HWSERIAL2       
-#define ENABLE_HWSERIAL3
-#define ENABLE_HWSERIAL6
-
 // Define here Serial instance number to map on Serial generic name
-//Elsan: Has no effect, should not route to TFT as it has a different protocol.
-#define SERIAL_UART_INSTANCE  3 /*1*/ //ex: 2 for Serial2 (USART2)
+#define SERIAL_UART_INSTANCE    1 //ex: 2 for Serial2 (USART2)
 // DEBUG_UART could be redefined to print on another instance than 'Serial'
 //#define DEBUG_UART              ((USART_TypeDef *) U(S)ARTX) // ex: USART3
 // DEBUG_UART baudrate, default: 9600 if not defined
@@ -331,18 +316,8 @@ extern "C" {
 
 // Default pin used for 'Serial' instance (ex: ST-Link)
 // Mandatory for Firmata
-#define PIN_SERIAL_RX           PD9//PB7//PA10   
-#define PIN_SERIAL_TX           PD8//PB6//PA9    
-
-#define PIN_SERIAL2_RX          PD6//PB7//PA10   //TFT   
-#define PIN_SERIAL2_TX          PD5//PB6//PA9    //TFT
-
-// Default pin used for 'Serial2' instance
-//#define PIN_SERIAL3_RX          PD9   //MMU
-//#define PIN_SERIAL3_TX          PD8   //MMU
-
-#define PIN_SERIAL3_RX          PD9//PC7 //ESP
-#define PIN_SERIAL3_TX          PD8//PC6 //ESP
+#define PIN_SERIAL_RX           PA10
+#define PIN_SERIAL_TX           PA9
 
 /* Extra HAL modules */
 #define HAL_DAC_MODULE_ENABLED
@@ -373,8 +348,6 @@ extern "C" {
 //                            pins are NOT connected to anything by default.
 #define SERIAL_PORT_MONITOR     Serial
 #define SERIAL_PORT_HARDWARE    Serial1
-#define SERIAL_PORT_HARDWARE_OPEN   Serial3
-#define SERIAL_PORT_HARDWARE_OPEN1  Serial6
 #endif
 
 #endif /* _VARIANT_ARDUINO_STM32_ */

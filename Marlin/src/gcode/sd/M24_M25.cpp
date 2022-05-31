@@ -16,7 +16,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
 
@@ -32,6 +32,7 @@
 #if ENABLED(PARK_HEAD_ON_PAUSE)
   #include "../../feature/pause.h"
 #endif
+#include "../queue.h"
 
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "../../feature/host_actions.h"
@@ -43,11 +44,7 @@
 
 #include "../../MarlinCore.h" // for startOrResumeJob
 
-#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
-extern DGUSScreenHandler ScreenHandler; //Elsan
-extern char fname2[100];  //Elsan
-extern int print_stat;
+extern bool sd_print_paused = false;
 
 /**
  * M24: Start or Resume SD Print
@@ -60,35 +57,33 @@ void GcodeSuite::M24() {
   #endif
 
   #if ENABLED(PARK_HEAD_ON_PAUSE)
-    if (did_pause_print) {  
-    //if(print_stat==2) {  //Elsan test
-      resume_print(); // will call print_job_timer.start()   
-      if(print_stat==2) print_stat=1; //Elsan resume.
-      else print_stat=1;  
-      //print_stat=1; //Elsan already paused, now start. 
+    if (did_pause_print) {
+      resume_print(); // will call print_job_timer.start()
       return;
     }
   #endif
 
-  if (/*card.isFileOpen()*/1) {  //Elsan
+  if (card.isFileOpen()) {
+    if (sd_print_paused) {
+      sd_print_paused = false;
+    }
     card.startFileprint();            // SD card will now be read for commands
     startOrResumeJob();               // Start (or resume) the print job timer
-    TERN_(POWER_LOSS_RECOVERY, recovery.prepare());
+    #if ENABLED(POWER_LOSS_RECOVERY)
+      recovery.prepare();
+    #endif
   }
 
   #if ENABLED(HOST_ACTION_COMMANDS)
     #ifdef ACTION_ON_RESUME
       host_action_resume();
     #endif
-    TERN_(HOST_PROMPT_SUPPORT, host_prompt_open(PROMPT_INFO, PSTR("Resuming SD"), DISMISS_STR));
+    #if ENABLED(HOST_PROMPT_SUPPORT)
+      host_prompt_open(PROMPT_INFO, PSTR("Resuming SD"), DISMISS_STR);
+    #endif
   #endif
 
   ui.reset_status();
-
-  dgusdisplay.WriteVariable(VP_SD_Print_Filename, /*buf_main[touched_nr+file_cnt3]*/fname2, VP_SD_FileName_LEN, true);  //Elsan
-  ScreenHandler.GotoScreen(DGUSLCD_SCREEN_SDPRINTMANIPULATION); //Elsan update DGUS for Print is started from XDesktop or other terminal. 
-  if(print_stat==2) print_stat=1; //Elsan resume.
-  else print_stat=1;
 }
 
 /**
@@ -96,37 +91,31 @@ void GcodeSuite::M24() {
  */
 void GcodeSuite::M25() {
 
+  // Set initial pause flag to prevent more commands from landing in the queue while we try to pause
+  #if ENABLED(SDSUPPORT)
+    if (IS_SD_PRINTING()) {
+      card.pauseSDPrint();
+      sd_print_paused = true;
+    }
+  #endif
+
   #if ENABLED(PARK_HEAD_ON_PAUSE)
-    //Elsan
-    #if ENABLED(SDSUPPORT)
-      if (IS_SD_PRINTING()) card.pauseSDPrint();
-      
-    #endif
-    print_stat=2; //Elsan enable and test if ADVANCED_PAUSE_FEATURE is used.
 
     M125();
-    
+
   #else
-
-    // Set initial pause flag to prevent more commands from landing in the queue while we try to pause
-    #if ENABLED(SDSUPPORT)
-      if (IS_SD_PRINTING()) card.pauseSDPrint();
-    #endif
-
-    print_stat=2; //Elsan
 
     #if ENABLED(POWER_LOSS_RECOVERY)
       if (recovery.enabled) recovery.save(true);
     #endif
 
     print_job_timer.pause();
-
-    #if DISABLED(DWIN_CREALITY_LCD)
-      ui.reset_status();
-    #endif
+    ui.reset_status();
 
     #if ENABLED(HOST_ACTION_COMMANDS)
-      TERN_(HOST_PROMPT_SUPPORT, host_prompt_open(PROMPT_PAUSE_RESUME, PSTR("Pause SD"), PSTR("Resume")));
+      #if ENABLED(HOST_PROMPT_SUPPORT)
+        host_prompt_open(PROMPT_PAUSE_RESUME, PSTR("Pause SD"), PSTR("Resume"));
+      #endif
       #ifdef ACTION_ON_PAUSE
         host_action_pause();
       #endif
