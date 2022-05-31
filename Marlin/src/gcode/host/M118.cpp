@@ -25,7 +25,7 @@
 
 #include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"  //Elsan
 #include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h" //Elsan
-char WIFI_IP[20]; //Elsan
+char WIFI_IP[64]; //Elsan
 extern char ETH_IP[];
 
 /**
