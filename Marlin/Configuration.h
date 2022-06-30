@@ -467,7 +467,7 @@
 // Above this temperature the heater will be switched off.
 // This can protect components from overheating, but NOT from shorts and failures.
 // (Use MINTEMP for thermistor short/failure protection.)
-#define HEATER_0_MAXTEMP 300
+#define HEATER_0_MAXTEMP 310 //300
 #define HEATER_1_MAXTEMP 275
 #define HEATER_2_MAXTEMP 275
 #define HEATER_3_MAXTEMP 275
@@ -475,7 +475,7 @@
 #define HEATER_5_MAXTEMP 275
 #define HEATER_6_MAXTEMP 275
 #define HEATER_7_MAXTEMP 275
-#define BED_MAXTEMP      110
+#define BED_MAXTEMP      120 //110
 
 //===========================================================================
 //============================= PID Settings ================================
@@ -497,13 +497,13 @@
   #if ENABLED(PID_PARAMS_PER_HOTEND)
     // Specify between 1 and HOTENDS values per array.
     // If fewer than EXTRUDER values are provided, the last element will be repeated.
-    #define DEFAULT_Kp_LIST {  18.72,  18.72 } // {  28.04,  28.04 }
-    #define DEFAULT_Ki_LIST {  1.04,  1.04 } //  { 1.52,  1.52 }
-    #define DEFAULT_Kd_LIST {  84.62,  84.62 } // {  128.96,  128.96 }
+    #define DEFAULT_Kp_LIST { 25.12, 25.12 } //{  18.72,  18.72 } // {  28.04,  28.04 }
+    #define DEFAULT_Ki_LIST {1.47, 1.47} //{  1.04,  1.04 } //  { 1.52,  1.52 }
+    #define DEFAULT_Kd_LIST {107.49, 107.49} //{  84.62,  84.62 } // {  128.96,  128.96 }
   #else
-    #define DEFAULT_Kp 18.72 // 17.64
-    #define DEFAULT_Ki 1.04 // 1.00
-    #define DEFAULT_Kd 84.62 // 77.63
+    #define DEFAULT_Kp 25.12 //18.72 // 17.64
+    #define DEFAULT_Ki 1.47 //1.04 // 1.00
+    #define DEFAULT_Kd 107.49 //84.62 // 77.63
 
   #endif
 #endif // PIDTEMP
@@ -543,9 +543,9 @@
 
   // 120V 250W silicone heater into 4mm borosilicate (MendelMax 1.5+)
   // from FOPDT model - kp=.39 Tp=405 Tdead=66, Tc set to 79.2, aggressive factor of .15 (vs .1, 1, 10)
-  #define DEFAULT_bedKp 39.44 // 16.56
-  #define DEFAULT_bedKi 1.25 // 0.48
-  #define DEFAULT_bedKd 830.81 // 383.31
+  #define DEFAULT_bedKp 17.77 //39.44 // 16.56
+  #define DEFAULT_bedKi 0.44 //1.25 // 0.48
+  #define DEFAULT_bedKd 482.35 //830.81 // 383.31
 
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #endif // PIDTEMPBED
