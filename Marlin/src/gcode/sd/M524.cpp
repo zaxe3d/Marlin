@@ -21,8 +21,8 @@
  */
 
 #include "../../inc/MarlinConfig.h"
-#include "../../lcd/extui/lib/dgus/fysetc/DGUSDisplayDef.h" //Elsan
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h"
+#include "../../lcd/extui/dgus/fysetc/DGUSDisplayDef.h" //Elsan
+#include "../../lcd/extui/dgus/DGUSScreenHandler.h"
 
 extern DGUSScreenHandler ScreenHandler; //Elsan
 
@@ -31,8 +31,8 @@ extern DGUSScreenHandler ScreenHandler; //Elsan
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 
-#if ENABLED(PRINTER_EVENT_LEDS)
-  #include "../../feature/leds/printer_event_leds.h"
+#if ENABLED(DWIN_LCD_PROUI)
+  #include "../../lcd/e3v2/proui/dwin.h"
 #endif
 
 /**
@@ -40,14 +40,19 @@ extern DGUSScreenHandler ScreenHandler; //Elsan
  */
 void GcodeSuite::M524() {
 
-  if (IS_SD_PRINTING())
-    card.flag.abort_sd_printing = true;
-  else if (/*card.isMounted()*/1)
-    card.closefile();
+  #if ENABLED(DWIN_LCD_PROUI)
 
-#if ENABLED(PRINTER_EVENT_LEDS)
-  printerEventLEDs.onPrintAborted();
-#endif
+    HMI_flag.abort_flag = true;    // The LCD will handle it
+
+  #else
+
+    if (IS_SD_PRINTING())
+      //card.abortFilePrintSoon(); //Elsan original
+      card.flag.abort_sd_printing = true;
+    else if (/*card.isMounted()*/1)
+      card.closefile();
+
+  #endif
 
   ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);  //Elsan DGUS screen not updated after abort from XDesktop.
 }

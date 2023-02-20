@@ -61,6 +61,8 @@
 #include "lwip/sys.h"
 #include "lwip/pbuf.h"
 
+extern struct netif gnetif;
+
 #if LWIP_DEBUG_TIMERNAMES
 #define HANDLER(x) x, #x
 #else /* LWIP_DEBUG_TIMERNAMES */
@@ -359,6 +361,7 @@ sys_check_timeouts(void)
   now = sys_now();
 
   do {
+    //ethernetif_input(&gnetif);
     struct sys_timeo *tmptimeout;
     sys_timeout_handler handler;
     void *arg;
@@ -385,12 +388,12 @@ sys_check_timeouts(void)
                                  tmptimeout->handler_name, sys_now() - tmptimeout->time, arg));
     }
 #endif /* LWIP_DEBUG_TIMERNAMES */
-    memp_free(MEMP_SYS_TIMEOUT, tmptimeout);
+    memp_free(MEMP_SYS_TIMEOUT, tmptimeout); //Elsan dis.
     if (handler != NULL) {
       handler(arg);
     }
     LWIP_TCPIP_THREAD_ALIVE();
-
+    //ethernetif_input(&gnetif);
     /* Repeat until all expired timers have been called */
   } while (1);
 }

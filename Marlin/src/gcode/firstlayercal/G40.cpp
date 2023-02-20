@@ -97,6 +97,7 @@ void GcodeSuite::G40() {
    body_gcode_sz = V2_gcodes_body_sz;
    for (uint i = 0; i < body_gcode_sz; i++) {
      sprintf_P(gcode_string, PSTR("%s"), V2_gcodes_body[i]); 
-     gcode.process_subcommands_now_P(gcode_string);
+     //gcode.process_subcommands_now_P(gcode_string);
+     gcode.process_subcommands_now(gcode_string); //Elsan
    }
 }

@@ -103,10 +103,10 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hcdHandle)
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* Configure POWER_SWITCH IO pin */
-      GPIO_InitStruct.Pin = GPIO_PIN_5;//GPIO_PIN_6;
+      /*GPIO_InitStruct.Pin = GPIO_PIN_14; //GPIO_PIN_5;//GPIO_PIN_6;
       GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
       GPIO_InitStruct.Pull = GPIO_NOPULL;
-      HAL_GPIO_Init(/*GPIOG*/GPIOE, &GPIO_InitStruct);
+      HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);*/
 
     /* Peripheral clock enable */
     __HAL_RCC_USB_OTG_HS_CLK_ENABLE();

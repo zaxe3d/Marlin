@@ -218,7 +218,7 @@ WEAK const PinMap PinMap_PWM[] = {
 #endif
 
 //*** SERIAL ***
-//#define HAL_UART_MODULE_ENABLED
+
 #ifdef HAL_UART_MODULE_ENABLED
 WEAK const PinMap PinMap_UART_TX[] = {
   {PA_0,  UART4,   STM_PIN_DATA(STM_MODE_AF_PP, GPIO_PULLUP, GPIO_AF8_UART4)},
@@ -385,7 +385,6 @@ WEAK const PinMap PinMap_Ethernet[] = {
 //*** No QUADSPI ***
 
 //*** USB ***
-//#define HAL_PCD_MODULE_ENABLED
 
 #ifdef HAL_PCD_MODULE_ENABLED
 WEAK const PinMap PinMap_USB_OTG_FS[] = {

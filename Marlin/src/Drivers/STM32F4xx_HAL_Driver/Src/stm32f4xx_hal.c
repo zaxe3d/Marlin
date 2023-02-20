@@ -158,33 +158,33 @@ typedef __uint32_t uint32_t ;  //Elsan
   *         to have correct HAL operation.
   * @retval HAL status
   */
-//HAL_StatusTypeDef HAL_Init(void)
-//{
-  /* Configure Flash prefetch, Instruction cache, Data cache */ 
+/*HAL_StatusTypeDef HAL_Init(void)
+{
+  // Configure Flash prefetch, Instruction cache, Data cache
 #if (INSTRUCTION_CACHE_ENABLE != 0U)
   __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
-#endif /* INSTRUCTION_CACHE_ENABLE */
+#endif // INSTRUCTION_CACHE_ENABLE
 
 #if (DATA_CACHE_ENABLE != 0U)
   __HAL_FLASH_DATA_CACHE_ENABLE();
-#endif /* DATA_CACHE_ENABLE */
+#endif // DATA_CACHE_ENABLE
 
 #if (PREFETCH_ENABLE != 0U)
   __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
-#endif /* PREFETCH_ENABLE */
+#endif // PREFETCH_ENABLE 
 
-  /* Set Interrupt Group Priority */
-  //HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
+  // Set Interrupt Group Priority 
+  HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
 
-  /* Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) */
-  //HAL_InitTick(TICK_INT_PRIORITY);
+  // Use systick as time base source and configure 1ms tick (default clock after Reset is HSI) 
+  HAL_InitTick(TICK_INT_PRIORITY);
 
-  /* Init the low level hardware */
-  //HAL_MspInit();
+  // Init the low level hardware 
+  HAL_MspInit();
 
-  /* Return function status */
-  //return HAL_OK;
-//}
+  // Return function status 
+  return HAL_OK;
+}*/
 
 /**
   * @brief  This function de-Initializes common part of the HAL and stops the systick.

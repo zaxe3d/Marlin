@@ -41,14 +41,14 @@
 /* #define HAL_DAC_MODULE_ENABLED */  
 /* #define HAL_DCMI_MODULE_ENABLED */ 
 #define HAL_DMA_MODULE_ENABLED
-#define HAL_DMA2D_MODULE_ENABLED 
+//#define HAL_DMA2D_MODULE_ENABLED 
 #define HAL_ETH_MODULE_ENABLED 
 #define HAL_FLASH_MODULE_ENABLED 
 /* #define HAL_NAND_MODULE_ENABLED */
 /* #define HAL_NOR_MODULE_ENABLED */
 /* #define HAL_PCCARD_MODULE_ENABLED */
 /* #define HAL_SRAM_MODULE_ENABLED */
-#define HAL_SDRAM_MODULE_ENABLED
+//#define HAL_SDRAM_MODULE_ENABLED
 /* #define HAL_HASH_MODULE_ENABLED */
 #define HAL_GPIO_MODULE_ENABLED
 #define HAL_I2C_MODULE_ENABLED
@@ -62,9 +62,9 @@
 /* #define HAL_RTC_MODULE_ENABLED */
 /* #define HAL_SAI_MODULE_ENABLED */  
 /* #define HAL_SD_MODULE_ENABLED */  
-/* #define HAL_SPI_MODULE_ENABLED */   
+#define HAL_SPI_MODULE_ENABLED 
 /* #define HAL_TIM_MODULE_ENABLED */   
-#define HAL_UART_MODULE_ENABLED 
+//#define HAL_UART_MODULE_ENABLED 
 /* #define HAL_USART_MODULE_ENABLED */
 /* #define HAL_SMARTCARD_MODULE_ENABLED */ 
 /* #define HAL_WWDG_MODULE_ENABLED */  
@@ -188,13 +188,24 @@
 
 /* Section 1 : Ethernet peripheral configuration */
 
+#define ETH_TX_DESC_CNT         4U  /* number of Ethernet Tx DMA descriptors */
+#define ETH_RX_DESC_CNT         4U  /* number of Ethernet Rx DMA descriptors */
+
 /* MAC ADDRESS: MAC_ADDR0:MAC_ADDR1:MAC_ADDR2:MAC_ADDR3:MAC_ADDR4:MAC_ADDR5 */
+/*
 #define MAC_ADDR0   2U
 #define MAC_ADDR1   0U
 #define MAC_ADDR2   0U
 #define MAC_ADDR3   0U
 #define MAC_ADDR4   0U
 #define MAC_ADDR5   0U
+*/
+#define ETH_MAC_ADDR0    ((uint8_t)0x02)
+#define ETH_MAC_ADDR1    ((uint8_t)0x01)
+#define ETH_MAC_ADDR2    ((uint8_t)0x00)
+#define ETH_MAC_ADDR3    ((uint8_t)0x00)
+#define ETH_MAC_ADDR4    ((uint8_t)0x00)
+#define ETH_MAC_ADDR5    ((uint8_t)0x00)
 
 /* Definition of the Ethernet driver buffers size and count */   
 #define ETH_RX_BUF_SIZE                ETH_MAX_PACKET_SIZE /* buffer size for receive               */
@@ -205,7 +216,8 @@
 /* Section 2: PHY configuration section */
 
 /* DP83848 PHY Address*/ 
-#define DP83848_PHY_ADDRESS             0x01U
+//#define DP83848_PHY_ADDRESS             0x01U
+#define LAN8742A_PHY_ADDRESS             /*0x01U*/0x00U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/ 
 #define PHY_RESET_DELAY                 (0x000000FFU)
 /* PHY Configuration delay */

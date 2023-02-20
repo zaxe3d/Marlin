@@ -91,6 +91,8 @@
 #define LWIP_TCP_OPT_LENGTH_SEGMENT(flags, pcb) LWIP_TCP_OPT_LENGTH(flags)
 #endif
 
+extern struct netif gnetif;
+
 /* Define some copy-macros for checksum-on-copy so that the code looks
    nicer by preventing too many ifdef's. */
 #if TCP_CHECKSUM_ON_COPY
@@ -595,6 +597,7 @@ tcp_write(struct tcp_pcb *pcb, const void *arg, u16_t len, u8_t apiflags)
    * variable, ready to be appended to pcb->unsent.
    */
   while (pos < len) {
+    //ethernetif_input(&gnetif);
     struct pbuf *p;
     u16_t left = len - pos;
     u16_t max_len = mss_local - optlen;
@@ -1012,7 +1015,6 @@ tcp_send_fin(struct tcp_pcb *pcb)
       /* no SYN/FIN/RST flag in the header, we can add the FIN flag */
       TCPH_SET_FLAG(last_unsent->tcphdr, TCP_FIN);
       tcp_set_flags(pcb, TF_FIN);
-      //HAL_Delay(100);//Elsan test
       return ERR_OK;
     }
   }

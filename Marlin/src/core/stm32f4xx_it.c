@@ -64,23 +64,14 @@
 //#include "serial.h"
 #include "stm32f4xx_hal_eth.h"  //Elsan
 #include "stm32f4xx_hal_i2c.h"  //Elsan
+#include "stm32f4xx_hal_spi.h"
 
-/*
-#define PGM_P2  const char *
-void serialprintPGM2(PGM_P2 str) {
-  char c;
-  while (const char c = pgm_read_byte(str++)) SERIAL_CHAR(c);
-}
-#define PSTR2(s) (s)
-#define SERIAL_ECHOPGM2(S)         (serialprintPGM2(PSTR2(S)))
-*/
-void prnt_els(char * str);
-
+extern struct netif gnetif;
 extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
-UART_HandleTypeDef /*huart6*/huart3;
-
 extern ETH_HandleTypeDef EthHandle;
-extern I2C_HandleTypeDef hi2c1; //Elsan
+extern I2C_HandleTypeDef hi2c1;
+extern SPI_HandleTypeDef spi;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -203,15 +194,15 @@ void PendSV_Handler(void)
 /**
   * @brief This function handles System tick timer.
   */
-/* 
+/*
 void SysTick_Handler(void)
 {
-  // USER CODE BEGIN SysTick_IRQn 0 
-
-  // USER CODE END SysTick_IRQn 0 
+  // USER CODE BEGIN SysTick_IRQn 0
+  // USER CODE END SysTick_IRQn 0
+  
   HAL_IncTick();
-  // USER CODE BEGIN SysTick_IRQn 1 
-
+  
+  // USER CODE BEGIN SysTick_IRQn 1
   // USER CODE END SysTick_IRQn 1 
 }
 */
@@ -243,18 +234,19 @@ void OTG_HS_IRQHandler(void)
 
 void ETH_IRQHandler(void)
 {
-  HAL_ETH_IRQHandler(&EthHandle);
+  HAL_ETH_IRQHandler(&EthHandle); //Necessary in interrupt mode.
+  
+  //if((eth_in==0)/*&&(ws_act==0)&&(web_page_prog==0)&&(wp_act==0)*/) {/*eth_in=1;*/ ethernetif_input(&gnetif); /*eth_in=0;*/} //Wrong.
+  //ethernetif_input(&gnetif); //Wrong.
 }
 
-/*
-void SPI3_IRQHandler(void)
+
+/*void SPI3_IRQHandler(void)
 {
-  //HAL_SPI_IRQHandler(&SpiHandle);
-  //SERIAL_ECHO("SPI3_IRQHandler");
-  //SERIAL_ECHO("\r\n");
-  prnt_els("IRQ");
-}
-*/
+  HAL_SPI_IRQHandler(&spi);
+  //HAL_SPI_Receive_IT(&spi, RX_Buffer, BUFFER_SIZE);
+}*/
+
 /* USER CODE BEGIN 1 */
 
 /**
@@ -279,5 +271,24 @@ void I2Cx_ER_IRQHandler(void)
   HAL_I2C_ER_IRQHandler(&hi2c1);
 }
 
+/*typedef struct  {
+  // Those 2 first fields must remain in this order at the beginning of the structure
+  void    *__this;
+  TIM_HandleTypeDef handle;
+  uint32_t preemptPriority;
+  uint32_t subPriority;
+} timerObj_t;
+extern timerObj_t *HardwareTimer_Handle[];
+void TIM6_IRQHandler()
+{
+    //if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
+    //{
+        
+      
+    //}
+    
+    HAL_TIM_IRQHandler(&HardwareTimer_Handle[5]->handle);
+    
+}*/
 /* USER CODE END 1 */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

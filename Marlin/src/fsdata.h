@@ -30,9 +30,9 @@
  *                     
  * Author : Adam Dunkels <adam@sics.se>                               
  *
- * CHANGELOG: this file has been modified by Sergio Perez Alcañiz <serpeal@upvnet.upv.es> 
- *            Departamento de Informática de Sistemas y Computadores          
- *            Universidad Politécnica de Valencia                             
+ * CHANGELOG: this file has been modified by Sergio Perez Alcaï¿½iz <serpeal@upvnet.upv.es> 
+ *            Departamento de Informï¿½tica de Sistemas y Computadores          
+ *            Universidad Politï¿½cnica de Valencia                             
  *            Valencia (Spain)    
  *            Date: March 2003                                          
  *
@@ -41,20 +41,34 @@
 #ifndef __FSDATA_H__
 #define __FSDATA_H__
 
+struct fsdata_file2 {
+  const struct fsdata_file2 *next;
+  const unsigned char *name;
+  const unsigned char *data;
+  const long int len;
+};
 
+struct fsdata_file_noconst2 {
+  struct fsdata_file2 *next;
+  char *name;
+  char *data;
+  long int len;
+};
 
 struct fsdata_file {
   const struct fsdata_file *next;
   const char *name;
   const char *data;
-  const int len;
+  const long int len;
+  u8_t http_header_included;
 };
 
 struct fsdata_file_noconst {
   struct fsdata_file *next;
   char *name;
   char *data;
-  int len;
+  long int len;
+  u8_t http_header_included;
 };
 
 #endif /* __FSDATA_H__ */

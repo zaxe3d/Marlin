@@ -96,6 +96,25 @@ const PinName digitalPin[] = {
   PB_13,  PB_14,
   PB_4,
 };
+
+const uint32_t analogInputPin[] = {
+  44, // A0
+  45, // A1
+  46, // A2
+  47, // A3
+  48, // A4
+  49, // A5
+  50, // A6
+  51, // A7
+  52, // A8
+  53, // A9
+  54, // A10
+  55, // A11
+  56, // A12
+  57 // A13
+  //58, // A14 //Elsan dis. Only 14 analog input is defined.
+  //59  // A16
+};
 #endif // ARDUINO_BLACK_F407VE || ARDUINO_BLACK_F407VG
 
 #if defined(ARDUINO_BLACK_F407ZE) || defined(ARDUINO_BLACK_F407ZG)
@@ -204,10 +223,8 @@ WEAK void SystemClock_Config(void)
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  //RCC_OscInitStruct.PLL.PLLM = 8;
-  //RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLM = 6;
-  RCC_OscInitStruct.PLL.PLLN = 168;
+  RCC_OscInitStruct.PLL.PLLM = /*8*/6;
+  RCC_OscInitStruct.PLL.PLLN = /*336*/168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 7;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {

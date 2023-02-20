@@ -51,16 +51,16 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_UDP_PCB        6
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
-#define MEMP_NUM_TCP_PCB        10
+#define MEMP_NUM_TCP_PCB        38//10
 /* MEMP_NUM_TCP_PCB_LISTEN: the number of listening TCP
    connections. */
-#define MEMP_NUM_TCP_PCB_LISTEN 5
+#define MEMP_NUM_TCP_PCB_LISTEN 38//5
 /* MEMP_NUM_TCP_SEG: the number of simultaneously queued TCP
    segments. */
-#define MEMP_NUM_TCP_SEG        8
+#define MEMP_NUM_TCP_SEG        38//8
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
-#define MEMP_NUM_SYS_TIMEOUT    10
+#define MEMP_NUM_SYS_TIMEOUT    5//10
 
 
 /* ---------- Pbuf options ---------- */
@@ -68,7 +68,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define PBUF_POOL_SIZE          8
 
 /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
-#define PBUF_POOL_BUFSIZE       1524
+#define PBUF_POOL_BUFSIZE       1536//1524 //Don't touch!!! Rx Buffers must have the same size.
 
 /* ---------- IPv4 options ---------- */
 #define LWIP_IPV4                1
@@ -129,7 +129,7 @@ The STM32F4xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
  - To use this feature let the following define uncommented.
  - To disable it and process by CPU comment the  the checksum.
 */
-#define CHECKSUM_BY_HARDWARE 
+#define CHECKSUM_BY_HARDWARE
 
 
 #ifdef CHECKSUM_BY_HARDWARE
@@ -138,7 +138,7 @@ The STM32F4xx allows computing and verifying the IP, UDP, TCP and ICMP checksums
   /* CHECKSUM_GEN_UDP==0: Generate checksums by hardware for outgoing UDP packets.*/
   #define CHECKSUM_GEN_UDP                0
   /* CHECKSUM_GEN_TCP==0: Generate checksums by hardware for outgoing TCP packets.*/
-  #define CHECKSUM_GEN_TCP                0 
+  #define CHECKSUM_GEN_TCP                0
   /* CHECKSUM_CHECK_IP==0: Check checksums by hardware for incoming IP packets.*/
   #define CHECKSUM_CHECK_IP               0
   /* CHECKSUM_CHECK_UDP==0: Check checksums by hardware for incoming UDP packets.*/

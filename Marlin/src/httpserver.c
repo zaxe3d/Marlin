@@ -40,35 +40,229 @@
 //#include "lcd_log.h"
 #include <string.h>
 #include <stdio.h>
+#include "FATFS/App/fatfs.h" //Elsan
+//#include "HAL/shared/Delay.h"
 
 //#include "module/temperature.h" //Elsan
 //#include "sd/cardreader.h"
 //extern CardReader card; 
 //extern Temperature thermalManager;
 
+#include <stdbool.h>
+
 int Bed_temp;
 int Extr_temp;
-extern char fname2[100];  
+//extern char fname2[100];
+extern char fname2[];
 extern int print_stat;
-//extern xyz_pos_t /*current_position*/cartes;
+char web_page_prog=0;
+volatile /*int*/unsigned char USB_write_start=0;
+char UPLOAD_COMPLETED=0;
+char http_filename[110];
+extern FIL MyFile;
+/*long int*//*UINT*/unsigned short int buf_wr_len=0;
+#define USB_BUF_LEN 			16384 //8192:worked. //32768// fast.           //8192 9s.
+unsigned char buf_wr[USB_BUF_LEN];
+extern char USBDISKPath[];
+void usb_file_open_wr2(void);
+typedef const char *(*tCGIHandler)(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
+typedef u16_t (*tSSIHandler)(int iIndex, char *pcInsert, int iInsertLen
+#if LWIP_HTTPD_SSI_MULTIPART
+                             , u16_t current_tag_part, u16_t *next_tag_part
+#endif /* LWIP_HTTPD_SSI_MULTIPART */
+#if LWIP_HTTPD_FILE_STATE
+                             , void *connection_state
+#endif /* LWIP_HTTPD_FILE_STATE */
+                             );
+char *gpio_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
+int32_t ssi_handler(int32_t iIndex, char *pcInsert, int32_t iInsertLen);
+char *about_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
+char *websocket_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[]);
+
+typedef void (*tWsHandler)(struct tcp_pcb *pcb, uint8_t *data, u16_t data_len, uint8_t mode);
+typedef void (*tWsOpenHandler)(struct tcp_pcb *pcb, const char *uri);
+void websocket_register_callbacks(tWsOpenHandler ws_open_cb, tWsHandler ws_cb);
+//int websocket_task_created=0;
+//int websocket_task_created2=0;
+int websocket_task_createdN[16];
+int ws_client_cnt=0;
+int ws_client_cntR=0;
+int ws_client_cnt_del=0;
+int ws_client_cnt_p[16];
+//struct tcp_pcb *pcb2;
+//struct tcp_pcb *pcb3;
+struct tcp_pcb *pcbN[16];
+//uint32_t websocketTimer=0;
+//uint32_t websocketTimer2=0;
+uint32_t websocketTimerN[16];
+//int websocket_task_first=1;
+int websocket_task_firstN[16];
+extern char noUSB;
+extern char HTTP_fileopen;
+char ws_noUSB = 1;
+char ws_noUSBN[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+char ws_isUSB_fileopen = 0;
+char ws_isUSB_fileopenN[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+char ws_par_ch[32]; //Parameter change indicators for websockets.
+char ws_par_chN[32][16]; //16 client.
+extern char isUSB_fileopen;
+extern long int ws_filesize, ws_sdpos;
+/*u32_t*/ip_addr_t rm_ip[16];
+//char rm_ip_str[16][32];
+//char ws_sel=0;
+char responseWS[400];
+struct tcp_pcb *pcbWS;
+unsigned char waiting_task=0;
+//extern /*uint32_t*/unsigned long long int uwTick2;
+//uint32_t HAL_GetTick2(void);
+//void EventPing2(void);
+//volatile char ws_act=0; //websocket activity.
+//extern volatile char eth_in;
+extern struct netif gnetif;
+//volatile char wp_act;
+char filename[/*40*/100]; //from http_recv2;
+extern bool wait_for_user;
+
+   char ws_material[32]="-";
+   char ws_filename[/*64*/100]="";
+   int  ws_elapsed_time=0;
+   char ws_estimated_time[32]="-";
+   char is_printing[6]="False"; 
+   char is_paused[6]="False"; 
+   char is_heating[6]="False"; 
+   char is_preheat[6]="False"; 
+   char is_calibrating[6]="False"; 
+   char is_bed_occupied[6]="False"; 
+   char is_usb_present[6]="False";
+
+typedef struct
+{
+    const char *pcCGIName;
+    tCGIHandler pfnCGIHandler;
+} tCGI;
+int g_iNumTags = 0;
+const char **g_ppcTags = NULL;
+tSSIHandler g_pfnSSIHandler = NULL;
+int g_iNumCGIs;
+const tCGI *g_pCGIs;
+
+enum {
+    SSI_UPTIME,
+    SSI_FREE_HEAP,
+    SSI_LED_STATE
+};
+
+#ifndef HTTPD_SERVER_PORT
+#define HTTPD_SERVER_PORT                   80
+#endif
+
+#ifndef HTTPD_MAX_RETRIES
+#define HTTPD_MAX_RETRIES                   4
+#endif
+/** The poll delay is X*500ms */
+#ifndef HTTPD_POLL_INTERVAL
+#define HTTPD_POLL_INTERVAL                 4
+#endif
+
+#ifndef HTTPD_TCP_PRIO
+#define HTTPD_TCP_PRIO                      TCP_PRIO_MIN
+#endif
+
+#define MIN_REQ_LEN   7
+#define CRLF "\r\n"
+
+#ifndef WS_TIMEOUT
+#define WS_TIMEOUT           10
+#endif
+
+#ifndef HTTP_IS_DATA_VOLATILE
+#if LWIP_HTTPD_SSI
+/* Copy for SSI files, no copy for non-SSI files */
+#define HTTP_IS_DATA_VOLATILE(hs)   ((hs)->ssi ? TCP_WRITE_FLAG_COPY : 0)
+#else /* LWIP_HTTPD_SSI */
+/** Default: don't copy if the data is sent from file-system directly */
+#define HTTP_IS_DATA_VOLATILE(hs) (((hs->file != NULL) && (hs->handle != NULL) && (hs->file == \
+                                   (char*)hs->handle->data + hs->handle->len - hs->left)) \
+                                   ? 0 : TCP_WRITE_FLAG_COPY)
+#endif /* LWIP_HTTPD_SSI */
+#endif
+
+#define HTTP_NO_DATA_TO_SEND       0
+
+#if HTTPD_USE_MEM_POOL
+#define HTTP_ALLOC_SSI_STATE()  (struct http_ssi_state *)memp_malloc(MEMP_HTTPD_SSI_STATE)
+#define HTTP_ALLOC_HTTP_STATE() (struct http_state *)memp_malloc(MEMP_HTTPD_STATE)
+#else /* HTTPD_USE_MEM_POOL */
+#define HTTP_ALLOC_SSI_STATE()  (struct http_ssi_state *)mem_malloc(sizeof(struct http_ssi_state))
+#define HTTP_ALLOC_HTTP_STATE() (struct http_state *)mem_malloc(sizeof(struct http_state))
+#endif /* HTTPD_USE_MEM_POOL */
+
+static const char WS_HEADER[] = "Upgrade: websocket\r\n";
+static const char WS_GUID[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+static const char WS_KEY[] = "Sec-WebSocket-Key: ";
+static const char WS_RSP[] = "HTTP/1.1 101 Switching Protocols\r\n" \
+                             "Upgrade: websocket\r\n" \
+                             "Connection: Upgrade\r\n" \
+                             "Sec-WebSocket-Accept: ";
+
+#define WS_BASE64_LEN        29
+#define WS_RSP_LEN           (sizeof(WS_RSP) + sizeof(CRLF CRLF) - 2 + WS_BASE64_LEN)
+
+typedef void (*tWsHandler)(struct tcp_pcb *pcb, uint8_t *data, u16_t data_len, uint8_t mode);
+typedef void (*tWsOpenHandler)(struct tcp_pcb *pcb, const char *uri);
+
+typedef struct
+{
+  const char *name;
+  u8_t shtml;
+} default_filename;
+
+const default_filename g_psDefaultFilenames[] = {
+  {"/index.shtml", 1 },
+  {"/index.ssi",   1 },
+  {"/index.shtm",  1 },
+  {"/index.html",  0 },
+  {"/index.htm",   0 }
+};
+
+#define NUM_DEFAULT_FILENAMES (sizeof(g_psDefaultFilenames) /   \
+                               sizeof(default_filename))
+
+enum {
+  WS_TEXT_MODE = 0x01,
+  WS_BIN_MODE  = 0x02,
+} WS_MODE;
 
 //#define USE_IAP_HTTP  //Elsan
 //#ifdef USE_IAP_HTTP
 
 static __IO uint32_t DataFlag=0;
 static __IO uint32_t size =0;
-static __IO uint32_t FlashWriteAddress;
+//static __IO uint32_t FlashWriteAddress;
 static uint32_t TotalReceived=0;
-static char LeftBytesTab[4];
-static uint8_t LeftBytes=0;
+//static char LeftBytesTab[4];
+//static uint8_t LeftBytes=0;
 static __IO uint8_t resetpage=0;
 static uint32_t ContentLengthOffset =0,BrowserFlag=0;
 static __IO uint32_t TotalData=0, checklogin=0; 
 struct http_state
 {
+  struct fs_file file_handle;
+  struct fs_file *handle;
+  char *file;
+  u32_t left;
+  u8_t is_websocket;
+  struct tcp_pcb *pcb;
+  u8_t retries;
+};
+
+struct http_state2 //For http_recv2.
+{
   char *file;
   u32_t left;
 };
+
+static err_t http_close_conn(struct tcp_pcb *pcb, struct http_state *hs);
 
 typedef enum 
 {
@@ -80,7 +274,20 @@ typedef enum
 }htmlpageState;
   
 htmlpageState htmlpage;
- 
+
+/*
+HTTP/1.1 101 Switching Protocols
+Upgrade: websocket
+Connection: Upgrade
+Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
+*/
+/*static const char websocket_resp[129] = 
+{0x48, 0X54, 0X54, 0X50, 0X2F, 0X31, 0X2E, 0X31, 0X20, 0X31, 0X30, 0X31, 0X20, 0X53, 0X77, 0X69, 0X74, 0X63, 0X68, 0X69, 0X6E, 0X67, 0X20, 0X50, 0X72, 0X6F, 0X74, 0X6F, 0X63, 
+ 0X6F, 0X6C, 0X73, 0X0D, 0X0A, 0X55, 0X70, 0X67, 0X72, 0X61, 0X64, 0X65, 0X3A, 0X20, 0X77, 0X65, 0X62, 0X73, 0X6F, 0X63, 0X6B, 0X65, 0X74, 0X0D, 0X0A, 0X43, 0X6F, 0X6E, 0X6E, 
+ 0X65, 0X63, 0X74, 0X69, 0X6F, 0X6E, 0X3A, 0X20, 0X55, 0X70, 0X67, 0X72, 0X61, 0X64, 0X65, 0X0D, 0X0A, 0X53, 0X65, 0X63, 0X2D, 0X57, 0X65, 0X62, 0X53, 0X6F, 0X63, 0X6B, 0X65, 
+ 0X74, 0X2D, 0X41, 0X63, 0X63, 0X65, 0X70, 0X74, 0X3A, 0X20, 0X48, 0X53, 0X6D, 0X72, 0X63, 0X30, 0X73, 0X4D, 0X6C, 0X59, 0X55, 0X6B, 0X41, 0X47, 0X6D, 0X6D, 0X35, 0X4F, 0X50, 
+ 0X70, 0X47, 0X32, 0X48, 0X61, 0X47, 0X57, 0X6B, 0X3D, 0X0D, 0X0A, 0X0D, 0X0A, };*/
+
 static const char http_crnl_2[4] = 
 /* "\r\n--" */
 {0xd, 0xa,0x2d,0x2d};
@@ -93,21 +300,23 @@ static const char Content_Length[17] =
 
 
 static uint32_t Parse_Content_Length(char *data, uint32_t len);
-static void IAP_HTTP_writedata(char* data, uint32_t len);
+//static void IAP_HTTP_writedata(char* data, uint32_t len);
 
 /* file must be allocated by caller and will be filled in
    by the function. */
-static int fs_open(char *name, struct fs_file *file);
+static int fs_open2(char *name, struct fs_file2 *file);
+err_t fs_open(struct fs_file *file, const char *name);
 
-void DynWebPage(/*struct netconn *conn*/void);
+//void DynWebPage(void);
 void DynWebPage2(void);
-void DynWebPage3(void);
+//void DynWebPage3(void);
 void DynWebPage4(void);
-void DynWebPage5(void);
-void DynWebPage8(void);
+//void DynWebPage5(void);
+//void DynWebPage8(void);
 void DynWebPage9(void);
 void DynWebPage20(void);
 void DynWebPage21(void);
+void DynWebPage22(void);
 void DynWebPage01(void);
 void DynWebPage02(void);
 void DynWebPage03(void);
@@ -118,7 +327,7 @@ u32_t nPageHits = 0;
 char LEDstate;
 int x_pos, y_pos, z_pos;
 
-static const unsigned char PAGE_START[] = {
+/*static const unsigned char PAGE_START[] = {
 0x3c,0x21,0x44,0x4f,0x43,0x54,0x59,0x50,0x45,0x20,0x68,0x74,0x6d,0x6c,0x20,0x50,
 0x55,0x42,0x4c,0x49,0x43,0x20,0x22,0x2d,0x2f,0x2f,0x57,0x33,0x43,0x2f,0x2f,0x44,
 0x54,0x44,0x20,0x48,0x54,0x4d,0x4c,0x20,0x34,0x2e,0x30,0x31,0x2f,0x2f,0x45,0x4e,
@@ -135,7 +344,7 @@ static const unsigned char PAGE_START[] = {
 0x64,0x6f,0x77,0x73,0x2d,0x31,0x32,0x35,0x32,0x22,0x3e,0x0d,0x0a,0x20,0x20,0x3c,
 0x6d,0x65,0x74,0x61,0x20,0x68,0x74,0x74,0x70,0x2d,0x65,0x71,0x75,0x69,0x76,0x3d,
 0x22,0x72,0x65,0x66,0x72,0x65,0x73,0x68,0x22,0x20,0x63,0x6f,0x6e,0x74,0x65,0x6e,
-0x74,0x3d,0x22,/*0x31*/0x31,0x22,0x3e,0x0d,0x0a,0x20,0x20,0x3c,0x6d,0x65,0x74,0x61,0x20,
+0x74,0x3d,0x22,0x31,0x22,0x3e,0x0d,0x0a,0x20,0x20,0x3c,0x6d,0x65,0x74,0x61,0x20,
 0x63,0x6f,0x6e,0x74,0x65,0x6e,0x74,0x3d,0x22,0x4d,0x53,0x48,0x54,0x4d,0x4c,0x20,
 0x36,0x2e,0x30,0x30,0x2e,0x32,0x38,0x30,0x30,0x2e,0x31,0x35,0x36,0x31,0x22,0x20,
 0x6e,0x61,0x6d,0x65,0x3d,0x22,0x47,0x45,0x4e,0x45,0x52,0x41,0x54,0x4f,0x52,0x22,
@@ -219,7 +428,7 @@ static const unsigned char PAGE_START[] = {
 0x6e,0x74,0x2d,0x66,0x61,0x6d,0x69,0x6c,0x79,0x3a,0x20,0x56,0x65,0x72,0x64,0x61,
 0x6e,0x61,0x3b,0x22,0x3e,0x4e,0x75,0x6d,0x62,0x65,0x72,0x20,0x6f,0x66,0x20,0x70,
 0x61,0x67,0x65,0x20,0x68,0x69,0x74,0x73,0x3a,0x0d,0x0a,0x00};
-
+*/
 
 /*static const unsigned char PAGE_START2[] = {
 	//const char MAIN_page[] PROGMEM = R"=====(
@@ -254,7 +463,7 @@ static const unsigned char PAGE_START3[] = {
   */
 static void conn_err(void *arg, err_t err)
 {
-  struct http_state *hs;
+  struct http_state2 *hs;
 
   hs = arg;
   mem_free(hs);
@@ -266,7 +475,7 @@ static void conn_err(void *arg, err_t err)
   * @param  hs: pointer to a http_state struct
   * @retval
   */
-static void close_conn(struct tcp_pcb *pcb, struct http_state *hs)
+static void close_conn(struct tcp_pcb *pcb, struct http_state2 *hs)
 {
   tcp_arg(pcb, NULL);
   tcp_sent(pcb, NULL);
@@ -277,16 +486,1149 @@ static void close_conn(struct tcp_pcb *pcb, struct http_state *hs)
 
 }
 
+static void
+http_state_init(struct http_state* hs)
+{
+  /* Initialize the structure. */
+  memset(hs, 0, sizeof(struct http_state));
+#if LWIP_HTTPD_DYNAMIC_HEADERS
+  /* Indicate that the headers are not yet valid */
+  hs->hdr_index = NUM_FILE_HDR_STRINGS;
+#endif /* LWIP_HTTPD_DYNAMIC_HEADERS */
+}
+
+/** Allocate a struct http_state. */
+static struct http_state*
+http_state_alloc(void)
+{
+  struct http_state *ret = HTTP_ALLOC_HTTP_STATE();
+#if LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED
+  if (ret == NULL) {
+    http_kill_oldest_connection(0);
+    ret = HTTP_ALLOC_HTTP_STATE();
+  }
+#endif /* LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED */
+  if (ret != NULL) {
+    http_state_init(ret);
+#if LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED
+    /* add the connection to the list */
+    if (http_connections == NULL) {
+      http_connections = ret;
+    } else {
+      struct http_state *last;
+      for(last = http_connections; last->next != NULL; last = last->next);
+      LWIP_ASSERT("last != NULL", last != NULL);
+      last->next = ret;
+    }
+#endif /* LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED */
+  }
+  return ret;
+}
+
+void
+fs_close(struct fs_file *file)
+{
+#if LWIP_HTTPD_CUSTOM_FILES
+  if (file->is_custom_file) {
+    fs_close_custom(file);
+  }
+#endif /* LWIP_HTTPD_CUSTOM_FILES */
+#if LWIP_HTTPD_FILE_STATE
+  fs_state_free(file, file->state);
+#endif /* #if LWIP_HTTPD_FILE_STATE */
+  LWIP_UNUSED_ARG(file);
+}
+
+static void
+http_state_eof(struct http_state *hs)
+{
+  if(hs->handle) {
+#if LWIP_HTTPD_TIMING
+    u32_t ms_needed = sys_now() - hs->time_started;
+    u32_t needed = LWIP_MAX(1, (ms_needed/100));
+    LWIP_DEBUGF(HTTPD_DEBUG_TIMING, ("httpd: needed %"U32_F" ms to send file of %d bytes -> %"U32_F" bytes/sec\n",
+      ms_needed, hs->handle->len, ((((u32_t)hs->handle->len) * 10) / needed)));
+#endif /* LWIP_HTTPD_TIMING */
+    fs_close(hs->handle);
+    hs->handle = NULL;
+  }
+#if LWIP_HTTPD_DYNAMIC_FILE_READ
+  if (hs->buf != NULL) {
+    mem_free(hs->buf);
+    hs->buf = NULL;
+  }
+#endif /* LWIP_HTTPD_DYNAMIC_FILE_READ */
+#if LWIP_HTTPD_SSI
+  if (hs->ssi) {
+    http_ssi_state_free(hs->ssi);
+    hs->ssi = NULL;
+  }
+#endif /* LWIP_HTTPD_SSI */
+}
+
+static void
+http_eof(struct tcp_pcb *pcb, struct http_state *hs)
+{
+  /* HTTP/1.1 persistent connection? (Not supported for SSI) */
+#if LWIP_HTTPD_SUPPORT_11_KEEPALIVE
+  if (hs->keepalive && !LWIP_HTTPD_IS_SSI(hs)) {
+    http_state_eof(hs);
+    http_state_init(hs);
+    hs->keepalive = 1;
+  } else
+#endif /* LWIP_HTTPD_SUPPORT_11_KEEPALIVE */
+  if (hs->is_websocket) {
+    http_state_eof(hs);
+    http_state_init(hs);
+    hs->is_websocket = 1;
+  } else {
+    http_close_conn(pcb, hs);
+  }
+}
+
+static u8_t
+http_check_eof(struct tcp_pcb *pcb, struct http_state *hs)
+{
+#if LWIP_HTTPD_DYNAMIC_FILE_READ
+  int count;
+#endif /* LWIP_HTTPD_DYNAMIC_FILE_READ */
+
+  /* Do we have a valid file handle? */
+  if (hs->handle == NULL) {
+    /* No - close the connection. */
+    http_eof(pcb, hs);
+    return 0;
+  }
+  if (fs_bytes_left(hs->handle) <= 0) {
+    /* We reached the end of the file so this request is done. */
+    LWIP_DEBUGF(HTTPD_DEBUG, ("End of file.\n"));
+    http_eof(pcb, hs);
+    return 0;
+  }
+#if LWIP_HTTPD_DYNAMIC_FILE_READ
+  /* Do we already have a send buffer allocated? */
+  if(hs->buf) {
+    /* Yes - get the length of the buffer */
+    count = hs->buf_len;
+  } else {
+    /* We don't have a send buffer so allocate one up to 2mss bytes long. */
+    count = 2 * tcp_mss(pcb);
+    do {
+      hs->buf = (char*)mem_malloc((mem_size_t)count);
+      if (hs->buf != NULL) {
+        hs->buf_len = count;
+        break;
+      }
+      count = count / 2;
+    } while (count > 100);
+
+    /* Did we get a send buffer? If not, return immediately. */
+    if (hs->buf == NULL) {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("No buff\n"));
+      return 0;
+    }
+  }
+
+  /* Read a block of data from the file. */
+  LWIP_DEBUGF(HTTPD_DEBUG, ("Trying to read %d bytes.\n", count));
+
+#if LWIP_HTTPD_FS_ASYNC_READ
+  count = fs_read_async(hs->handle, hs->buf, count, http_continue, hs);
+#else /* LWIP_HTTPD_FS_ASYNC_READ */
+  count = fs_read(hs->handle, hs->buf, count);
+#endif /* LWIP_HTTPD_FS_ASYNC_READ */
+  if (count < 0) {
+    if (count == FS_READ_DELAYED) {
+      /* Delayed read, wait for FS to unblock us */
+      return 0;
+    }
+    /* We reached the end of the file so this request is done.
+     * @todo: don't close here for HTTP/1.1? */
+    LWIP_DEBUGF(HTTPD_DEBUG, ("End of file.\n"));
+    http_eof(pcb, hs);
+    return 0;
+  }
+
+  /* Set up to send the block of data we just read */
+  LWIP_DEBUGF(HTTPD_DEBUG, ("Read %d bytes.\n", count));
+  hs->left = count;
+  hs->file = hs->buf;
+#if LWIP_HTTPD_SSI
+  if (hs->ssi) {
+    hs->ssi->parse_left = count;
+    hs->ssi->parsed = hs->buf;
+  }
+#endif /* LWIP_HTTPD_SSI */
+#else /* LWIP_HTTPD_DYNAMIC_FILE_READ */
+  LWIP_ASSERT("SSI and DYNAMIC_HEADERS turned off but eof not reached", 0);
+#endif /* LWIP_HTTPD_SSI || LWIP_HTTPD_DYNAMIC_HEADERS */
+  return 1;
+}
+
+int
+fs_bytes_left(struct fs_file *file)
+{
+  return file->len - file->index;
+}
+
+static void
+http_state_free(struct http_state *hs)
+{
+  if (hs != NULL) {
+    http_state_eof(hs);
+#if LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED
+    /* take the connection off the list */
+    if (http_connections) {
+      if (http_connections == hs) {
+        http_connections = hs->next;
+      } else {
+        struct http_state *last;
+        for(last = http_connections; last->next != NULL; last = last->next) {
+          if (last->next == hs) {
+            last->next = hs->next;
+            break;
+          }
+        }
+      }
+    }
+#endif /* LWIP_HTTPD_KILL_OLD_ON_CONNECTIONS_EXCEEDED */
+#if HTTPD_USE_MEM_POOL
+    memp_free(MEMP_HTTPD_STATE, hs);
+#else /* HTTPD_USE_MEM_POOL */
+    mem_free(hs);
+#endif /* HTTPD_USE_MEM_POOL */
+  }
+}
+
+
+static err_t
+http_write(struct tcp_pcb *pcb, const void* ptr, u16_t *length, u8_t apiflags)
+{
+   u16_t len;
+   err_t err;
+   LWIP_ASSERT("length != NULL", length != NULL);
+   len = *length;
+   if (len == 0) {
+     return ERR_OK;
+   }
+   do {
+     //ethernetif_input(&gnetif);
+     LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Trying to send %d bytes\n", len));
+     err = tcp_write(pcb, ptr, len, apiflags);
+     //err = tcp_write(pcb, ptr, len, 0x01);
+     if (err == ERR_MEM) {
+       if ((tcp_sndbuf(pcb) == 0) ||
+           (tcp_sndqueuelen(pcb) >= TCP_SND_QUEUELEN)) {
+         /* no need to try smaller sizes */
+         len = 1;
+       } else {
+         len /= 2;
+       }
+       LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE,
+                   ("Send failed, trying less (%d bytes)\n", len));
+     }
+   } while ((err == ERR_MEM) && (len > 1)); //Elsan dis
+
+   if (err == ERR_OK) {
+     LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Sent %d bytes\n", len));
+   } else {
+     LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Send failed with err %d (\"%s\")\n", err, lwip_strerr(err)));
+   }
+
+   *length = len;
+   return err;
+}
+
+
+/*static err_t
+http_write_modified(struct tcp_pcb *pcb, const void* ptr, u16_t *length, u8_t apiflags)
+{
+  err_t err;
+  u16_t len;
+
+  len = *length;
+  if (len == 0) {
+     return ERR_OK;
+   }
+   
+  if (tcp_sndbuf(pcb) < *length)
+  {
+    len = tcp_sndbuf(pcb);
+  }
+  else
+  {
+    len = *length;
+  }
+  
+  //err = tcp_write(pcb, hs->file, len, 0x01);
+  err = tcp_write(pcb, ptr, len, apiflags);
+  
+  *length = len;
+   return err;
+}*/
+
+
+static u8_t
+http_send_data_nonssi(struct tcp_pcb *pcb, struct http_state *hs)
+{
+  err_t err;
+  u16_t len;
+  u16_t mss;
+  u8_t data_to_send = 0;
+
+  /* We are not processing an SHTML file so no tag checking is necessary.
+   * Just send the data as we received it from the file. */
+
+  /* We cannot send more data than space available in the send
+     buffer. */
+  if (tcp_sndbuf(pcb) < hs->left) {
+    len = tcp_sndbuf(pcb);
+  } else {
+    len = (u16_t)hs->left;
+    LWIP_ASSERT("hs->left did not fit into u16_t!", (len == hs->left));
+  }
+  mss = tcp_mss(pcb);
+  if (len > (2 * mss)) {
+    len = 2 * mss;
+  }
+
+  //err = http_write(pcb, hs->file, &len, HTTP_IS_DATA_VOLATILE(hs));
+  err = http_write(pcb, hs->file, &len, 0x01);
+  if (err == ERR_OK) {
+    data_to_send = 1;
+    hs->file += len;
+    hs->left -= len;
+  }
+
+  return data_to_send;
+}
+
+static u8_t
+http_send(struct tcp_pcb *pcb, struct http_state *hs)
+{
+  u8_t data_to_send = HTTP_NO_DATA_TO_SEND;
+
+  LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("http_send: pcb=%p hs=%p left=%d\n", (void*)pcb,
+    (void*)hs, hs != NULL ? (int)hs->left : 0));
+
+#if LWIP_HTTPD_SUPPORT_POST && LWIP_HTTPD_POST_MANUAL_WND
+  if (hs->unrecved_bytes != 0) {
+    return 0;
+  }
+#endif /* LWIP_HTTPD_SUPPORT_POST && LWIP_HTTPD_POST_MANUAL_WND */
+
+  /* If we were passed a NULL state structure pointer, ignore the call. */
+  if (hs == NULL) {
+    return 0;
+  }
+
+#if LWIP_HTTPD_FS_ASYNC_READ
+  /* Check if we are allowed to read from this file.
+     (e.g. SSI might want to delay sending until data is available) */
+  if (!fs_is_file_ready(hs->handle, http_continue, hs)) {
+    return 0;
+  }
+#endif /* LWIP_HTTPD_FS_ASYNC_READ */
+
+#if LWIP_HTTPD_DYNAMIC_HEADERS
+  /* Do we have any more header data to send for this file? */
+  if(hs->hdr_index < NUM_FILE_HDR_STRINGS) {
+    data_to_send = http_send_headers(pcb, hs);
+    if (data_to_send != HTTP_DATA_TO_SEND_CONTINUE) {
+      return data_to_send;
+    }
+  }
+#endif /* LWIP_HTTPD_DYNAMIC_HEADERS */
+
+  /* Have we run out of file data to send? If so, we need to read the next
+   * block from the file. */
+  if (hs->left == 0) {
+    if (!http_check_eof(pcb, hs)) {
+      return 0;
+    }
+  }
+
+#if LWIP_HTTPD_SSI
+  if(hs->ssi) {
+    data_to_send = http_send_data_ssi(pcb, hs);
+  } else
+#endif /* LWIP_HTTPD_SSI */
+  {
+    data_to_send = http_send_data_nonssi(pcb, hs);
+  }
+
+  if((hs->left == 0) && (fs_bytes_left(hs->handle) <= 0)) {
+    /* We reached the end of the file so this request is done.
+     * This adds the FIN flag right into the last data segment. */
+    LWIP_DEBUGF(HTTPD_DEBUG, ("End of file.\n"));
+    http_eof(pcb, hs);
+    return 0;
+  }
+  LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("send_data end.\n"));
+  return data_to_send;
+}
+
+static err_t
+http_init_file(struct http_state *hs, struct fs_file *file, int is_09, const char *uri, u8_t tag_check)
+{
+  if (file != NULL) {
+    /* file opened, initialise struct http_state */
+#if LWIP_HTTPD_SSI
+    if (tag_check) {
+      struct http_ssi_state *ssi = http_ssi_state_alloc();
+      if (ssi != NULL) {
+        ssi->tag_index = 0;
+        ssi->tag_state = TAG_NONE;
+        ssi->parsed = file->data;
+        ssi->parse_left = file->len;
+        ssi->tag_end = file->data;
+        hs->ssi = ssi;
+      }
+    }
+#else /* LWIP_HTTPD_SSI */
+    LWIP_UNUSED_ARG(tag_check);
+#endif /* LWIP_HTTPD_SSI */
+    hs->handle = file;
+    hs->file = (char*)file->data;
+    LWIP_ASSERT("File length must be positive!", (file->len >= 0));
+    hs->left = file->len;
+    hs->retries = 0;
+#if LWIP_HTTPD_TIMING
+    hs->time_started = sys_now();
+#endif /* LWIP_HTTPD_TIMING */
+#if !LWIP_HTTPD_DYNAMIC_HEADERS
+    LWIP_ASSERT("HTTP headers not included in file system", hs->handle->http_header_included);
+#endif /* !LWIP_HTTPD_DYNAMIC_HEADERS */
+#if LWIP_HTTPD_SUPPORT_V09
+    if (hs->handle->http_header_included && is_09) {
+      /* HTTP/0.9 responses are sent without HTTP header,
+         search for the end of the header. */
+      char *file_start = strnstr(hs->file, CRLF CRLF, hs->left);
+      if (file_start != NULL) {
+        size_t diff = file_start + 4 - hs->file;
+        hs->file += diff;
+        hs->left -= (u32_t)diff;
+      }
+    }
+#endif /* LWIP_HTTPD_SUPPORT_V09*/
+  } else {
+    hs->handle = NULL;
+    hs->file = NULL;
+    hs->left = 0;
+    hs->retries = 0;
+  }
+#if LWIP_HTTPD_DYNAMIC_HEADERS
+    /* Determine the HTTP headers to send based on the file extension of
+   * the requested URI. */
+  if ((hs->handle == NULL) || !hs->handle->http_header_included) {
+    get_http_headers(hs, (char*)uri);
+  }
+#else /* LWIP_HTTPD_DYNAMIC_HEADERS */
+  LWIP_UNUSED_ARG(uri);
+#endif /* LWIP_HTTPD_DYNAMIC_HEADERS */
+  return ERR_OK;
+}
+
+#if LWIP_HTTPD_SUPPORT_EXTSTATUS
+/** Initialize a http connection with a file to send for an error message
+ *
+ * @param hs http connection state
+ * @param error_nr HTTP error number
+ * @return ERR_OK if file was found and hs has been initialized correctly
+ *         another err_t otherwise
+ */
+static err_t
+http_find_error_file(struct http_state *hs, u16_t error_nr)
+{
+  const char *uri1, *uri2, *uri3;
+  err_t err;
+
+  if (error_nr == 501) {
+    uri1 = "/501.html";
+    uri2 = "/501.htm";
+    uri3 = "/501.shtml";
+  } else {
+    /* 400 (bad request is the default) */
+    uri1 = "/400.html";
+    uri2 = "/400.htm";
+    uri3 = "/400.shtml";
+  }
+  err = fs_open(&hs->file_handle, uri1);
+  if (err != ERR_OK) {
+    err = fs_open(&hs->file_handle, uri2);
+    if (err != ERR_OK) {
+      err = fs_open(&hs->file_handle, uri3);
+      if (err != ERR_OK) {
+        LWIP_DEBUGF(HTTPD_DEBUG, ("Error page for error %"U16_F" not found\n",
+          error_nr));
+        return ERR_ARG;
+      }
+    }
+  }
+  return http_init_file(hs, &hs->file_handle, 0, NULL, 0);
+}
+#else /* LWIP_HTTPD_SUPPORT_EXTSTATUS */
+#define http_find_error_file(hs, error_nr) ERR_ARG
+#endif /* LWIP_HTTPD_SUPPORT_EXTSTATUS */
+
+static struct fs_file *
+http_get_404_file(struct http_state *hs, const char **uri)
+{
+  err_t err;
+
+  *uri = "/404.html";
+  err = fs_open(&hs->file_handle, *uri);
+  if (err != ERR_OK) {
+    /* 404.html doesn't exist. Try 404.htm instead. */
+    *uri = "/404.htm";
+    err = fs_open(&hs->file_handle, *uri);
+    if (err != ERR_OK) {
+      /* 404.htm doesn't exist either. Try 404.shtml instead. */
+      *uri = "/404.shtml";
+      err = fs_open(&hs->file_handle, *uri);
+      if (err != ERR_OK) {
+        /* 404.htm doesn't exist either. Indicate to the caller that it should
+         * send back a default 404 page.
+         */
+        *uri = NULL;
+        return NULL;
+      }
+    }
+  }
+
+  return &hs->file_handle;
+}
+
+static err_t
+http_find_file(struct http_state *hs, const char *uri, int is_09)
+{
+  size_t loop;
+  struct fs_file *file = NULL;
+  char *params;
+  err_t err;
+#if LWIP_HTTPD_CGI
+  int i;
+  int count;
+#endif /* LWIP_HTTPD_CGI */
+#if !LWIP_HTTPD_SSI
+  const
+#endif /* !LWIP_HTTPD_SSI */
+  /* By default, assume we will not be processing server-side-includes tags */
+  u8_t tag_check = 0;
+
+  /* Have we been asked for the default root file? */
+  if((uri[0] == '/') &&  (uri[1] == 0)) {
+    /* Try each of the configured default filenames until we find one
+       that exists. */
+    for (loop = 0; loop < NUM_DEFAULT_FILENAMES; loop++) {
+      LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Looking for %s...\n", g_psDefaultFilenames[loop].name));
+      err = fs_open(&hs->file_handle, (char *)g_psDefaultFilenames[loop].name);
+      uri = (char *)g_psDefaultFilenames[loop].name;
+      if(err == ERR_OK) {
+        file = &hs->file_handle;
+        LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Opened.\n"));
+#if LWIP_HTTPD_SSI
+        tag_check = g_psDefaultFilenames[loop].shtml;
+#endif /* LWIP_HTTPD_SSI */
+        break;
+      }
+    }
+    if (file == NULL) {
+      /* None of the default filenames exist so send back a 404 page */
+      file = http_get_404_file(hs, &uri);
+#if LWIP_HTTPD_SSI
+      tag_check = 0;
+#endif /* LWIP_HTTPD_SSI */
+    }
+  } else {
+    /* No - we've been asked for a specific file. */
+    /* First, isolate the base URI (without any parameters) */
+    params = (char *)strchr(uri, '?');
+    if (params != NULL) {
+      /* URI contains parameters. NULL-terminate the base URI */
+      *params = '\0';
+      params++;
+    }
+
+#if LWIP_HTTPD_CGI
+    /* Does the base URI we have isolated correspond to a CGI handler? */
+    if (g_iNumCGIs && g_pCGIs) {
+      for (i = 0; i < g_iNumCGIs; i++) {
+        if (strcmp(uri, g_pCGIs[i].pcCGIName) == 0) {
+          /*
+           * We found a CGI that handles this URI so extract the
+           * parameters and call the handler.
+           */
+           count = extract_uri_parameters(hs, params);
+           uri = g_pCGIs[i].pfnCGIHandler(i, count, hs->params,
+                                          hs->param_vals);
+           break;
+        }
+      }
+    }
+#endif /* LWIP_HTTPD_CGI */
+
+    LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Opening %s\n", uri));
+
+    err = fs_open(&hs->file_handle, uri);
+    if (err == ERR_OK) {
+       file = &hs->file_handle;
+    } else {
+      file = http_get_404_file(hs, &uri);
+    }
+#if LWIP_HTTPD_SSI
+    if (file != NULL) {
+      /* See if we have been asked for an shtml file and, if so,
+         enable tag checking. */
+      tag_check = 0;
+      for (loop = 0; loop < NUM_SHTML_EXTENSIONS; loop++) {
+        if (strstr(uri, g_pcSSIExtensions[loop])) {
+          tag_check = 1;
+          break;
+        }
+      }
+    }
+#endif /* LWIP_HTTPD_SSI */
+  }
+  return http_init_file(hs, file, is_09, uri, tag_check);
+}
+
+err_t
+websocket_write(struct tcp_pcb *pcb, const uint8_t *data, uint16_t len, uint8_t mode)
+{
+  //uint8_t *buf = mem_malloc(len + 4); //Elsan dis
+  //uint8_t *buf = buf_wr; //Elsan test
+  uint8_t buf[400];        //Elsan test
+  if (buf == NULL) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("[websocket_write] out of memory\n"));
+    return ERR_MEM;
+  }
+
+  int offset = 2;
+  buf[0] = 0x80 | mode;
+  if (len > 125) {
+    offset = 4;
+    buf[1] = 126;
+    buf[2] = len >> 8;
+    buf[3] = len;
+  } else {
+    buf[1] = len;
+  }
+
+  memcpy(&buf[offset], data, len);
+  len += offset;
+
+  LWIP_DEBUGF(HTTPD_DEBUG, ("[websocket_write] sending packet\n"));
+  err_t retval = http_write(pcb, buf, &len, TCP_WRITE_FLAG_COPY); //Elsan dis
+  //err_t retval = http_write_modified(pcb, buf, &len, TCP_WRITE_FLAG_COPY); //Elsan test
+  //mem_free(buf); //Elsan dis
+
+  return retval;
+}
+
+void websocket_cb(struct tcp_pcb *pcb, uint8_t *data, u16_t data_len, uint8_t mode)
+{
+    //printf("[websocket_callback]:\n%.*s\n", (int) data_len, (char*) data);
+
+    //uint8_t response[2];
+    char response[400];
+    uint16_t val=0;
+
+    if (strstr(data, "pause")) val=10;
+    else if (strstr(data, "resume")) val=11;
+    else if (strstr(data, "cancel")) val=12;
+    else if (strstr(data, "toggle_preheat")) val=13;
+
+    switch (/*data[0]*/val) {
+        case 'A': // ADC
+            /* This should be done on a separate thread in 'real' applications */
+            //val = 1; //sdk_system_adc_read();
+            return;
+            break;
+        case 'D': // Disable LED
+            //gpio_write(LED_PIN, true);
+            //val = 0xDEAD;
+            return;
+            break;
+        case 'E': // Enable LED
+            //gpio_write(LED_PIN, false);
+            //val = 0xBEEF;
+            return;
+            break;
+        case 10: // Pause
+            //Send pause command to Marlin. (queue)
+            //queue.inject_P(PSTR("M25"));
+            ws_pause();
+            strcpy(is_paused, "True");
+            break;
+        case 11: // Resume
+            //Send resume command to Marlin. (queue)
+            //queue.inject_P(PSTR("M24"));
+            wait_for_user = false;
+            ws_resume(); //Resume normally waits for a while. During wait time does xDesktop requires ping?
+            strcpy(is_paused, "False");
+            break;
+        case 12: // Abort.
+            //queue.inject_P(PSTR("M524"));
+            ws_abort(); 
+            strcpy(is_printing, "False");
+            strcpy(ws_filename, "");
+            break;
+        case 13: // Toggle preheat.
+            ws_toggle_preheat();
+            break;
+        default:
+            //printf("Unknown command\n");
+            //val = 0;
+            return;
+            break;
+    }
+
+    //response[1] = (uint8_t) val;
+    //response[0] = val >> 8;
+    //websocket_write(pcb, response, 2, WS_BIN_MODE); //Elsan dis for test.
+    
+    /*char websocket_buf[64]="{\"Elsan\"}";
+    int len = snprintf(websocket_buf, sizeof (websocket_buf),
+                "{\"uptime\" : \"%d\","
+                " \"heap\" : \"%d\","
+                " \"led\" : \"%d\"}", val, 10, 0);
+    websocket_write(pcb, websocket_buf, len, WS_TEXT_MODE);*/
+
+  for(char a=0; a < 16; a++) {
+   if(websocket_task_createdN[a]){
+    response[0]=0x89;
+    //websocket_write(pcb, (unsigned char *) response, 0, 9);
+    //websocket_write(pcbN[a], (unsigned char *) response, 0, 9); //Removed in new version.
+
+    int len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+
+    //websocket_write(pcb, response, len, WS_TEXT_MODE);
+    websocket_write(pcbN[a], response, len, WS_TEXT_MODE);
+  }
+ }
+}
+
+//Only this one is used. No need for _cb2.
+void websocket_open_cb(struct tcp_pcb *pcb, const char *uri)
+{
+   //printf("WS URI: %s\n", uri);
+   //if (!strcmp(uri, "/stream")) {
+   if(ws_client_cntR < 16){
+    if (!strcmp(uri, "/")) {
+        //printf("request for streaming\n");
+        //xTaskCreate(&websocket_task, "websocket_task", 256, (void *) pcb, 2, NULL);
+        
+        char a, b=0, c=0;
+        if(ws_client_cnt){
+          for(a=0; a < ws_client_cnt; a++) {
+            b=ws_client_cnt_p[a];
+            if(b==1) { //Deleted position.
+              c=1;
+              b=a;
+              break;
+            }
+          }
+        }
+        if(c) {
+          websocketTimerN[b]=HAL_GetTick();
+          pcbN[b]=pcb;
+          rm_ip[b].addr=pcb->remote_ip.addr;
+          websocket_task_createdN[b]=1;
+          websocket_task_firstN[b]=1; 
+          ws_client_cnt_p[b]=0; //Written again.
+          ws_client_cntR++;
+        }  
+        else {
+          websocketTimerN[ws_client_cnt]=HAL_GetTick();
+          pcbN[ws_client_cnt]=pcb;
+          rm_ip[ws_client_cnt].addr=pcb->remote_ip.addr;
+          websocket_task_createdN[ws_client_cnt]=1;
+          websocket_task_firstN[ws_client_cnt]=1;
+          ws_client_cnt_p[ws_client_cnt]=0; //Delete mark removed.
+          ws_client_cnt++;
+          ws_client_cntR=ws_client_cnt;
+        }
+    }
+   }
+}
+
+static err_t
+http_parse_request(struct pbuf **inp, struct http_state *hs, struct tcp_pcb *pcb)
+{
+  char *data;
+  char *crlf;
+  u16_t data_len;
+  struct pbuf *p = *inp;
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+  u16_t clen;
+#endif /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+#if LWIP_HTTPD_SUPPORT_POST
+  err_t err;
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+
+  LWIP_UNUSED_ARG(pcb); /* only used for post */
+  LWIP_ASSERT("p != NULL", p != NULL);
+  LWIP_ASSERT("hs != NULL", hs != NULL);
+
+  if ((hs->handle != NULL) || (hs->file != NULL)) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("Received data while sending a file\n"));
+    /* already sending a file */
+    /* @todo: abort? */
+    return ERR_USE;
+  }
+
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+
+  LWIP_DEBUGF(HTTPD_DEBUG, ("Received %"U16_F" bytes\n", p->tot_len));
+
+  /* first check allowed characters in this pbuf? */
+
+  /* enqueue the pbuf */
+  if (hs->req == NULL) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("First pbuf\n"));
+    hs->req = p;
+  } else {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("pbuf enqueued\n"));
+    pbuf_cat(hs->req, p);
+  }
+
+  if (hs->req->next != NULL) {
+    data_len = LWIP_MIN(hs->req->tot_len, LWIP_HTTPD_MAX_REQ_LENGTH);
+    pbuf_copy_partial(hs->req, httpd_req_buf, data_len, 0);
+    data = httpd_req_buf;
+  } else
+#endif /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+  {
+    data = (char *)p->payload;
+    data_len = p->len;
+    if (p->len != p->tot_len) {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("Warning: incomplete header due to chained pbufs\n"));
+    }
+  }
+
+  /* Parse WebSocket request */
+  hs->is_websocket = 0;
+  if (strncasestr(data, WS_HEADER, data_len)) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("WebSocket opening handshake\n"));
+    char *key_start = strncasestr(data, WS_KEY, data_len);
+    if (key_start) {
+      key_start += sizeof(WS_KEY) - 1;
+      char *key_end = strnstr(key_start, CRLF, data_len);
+      if (key_end) {
+        char key[64];
+        int len = sizeof(char) * (key_end - key_start);
+        if ((len + sizeof(WS_GUID) < sizeof(key)) && (len > 0)) {
+          /* Allocate response buffer */
+          unsigned char *retval = mem_malloc(WS_RSP_LEN);
+          if (retval == NULL) {
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Out of memory\n"));
+            return ERR_MEM;
+          }
+          unsigned char *retval_ptr;
+          retval_ptr = memcpy(retval, WS_RSP, sizeof(WS_RSP) - 1);
+          retval_ptr += sizeof(WS_RSP) - 1;
+
+          /* Concatenate key */
+          memcpy(key, key_start, len);
+          strlcpy(&key[len], WS_GUID, sizeof(key));
+          LWIP_DEBUGF(HTTPD_DEBUG, ("Resulting key: %s\n", key));
+
+          /* Get SHA1 */
+          int key_len = sizeof(WS_GUID) - 1 + len;
+          unsigned char sha1sum[20];
+          mbedtls_sha1((unsigned char *) key, key_len, sha1sum);
+
+          /* Base64 encode */
+          unsigned int olen = WS_BASE64_LEN;
+          int ok = mbedtls_base64_encode(retval_ptr, WS_BASE64_LEN, &olen, sha1sum, 20);
+
+          if (ok == 0) {
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Base64 encoded: %s\n", retval_ptr));
+
+            /* Send response */
+            memcpy(&retval_ptr[olen], CRLF CRLF, sizeof(CRLF CRLF));
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Sending:\n%s\n", retval));
+            //tcp_write(pcb, retval, WS_RSP_LEN - 1, 0);
+            tcp_write(pcb, retval, WS_RSP_LEN - 1, 1);
+            hs->is_websocket = 1;
+          }
+          mem_free(retval);
+        } else {
+          LWIP_DEBUGF(HTTPD_DEBUG, ("Key overflow"));
+          return ERR_MEM;
+        }
+      }
+    } else {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("error: malformed packet\n"));
+      return ERR_ARG;
+    }
+  }
+
+  /* received enough data for minimal request? */
+  if (data_len >= MIN_REQ_LEN) {
+    /* wait for CRLF before parsing anything */
+    crlf = strnstr(data, CRLF, data_len);
+    if (crlf != NULL) {
+#if LWIP_HTTPD_SUPPORT_POST
+      int is_post = 0;
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+      int is_09 = 0;
+      char *sp1, *sp2;
+      u16_t left_len, uri_len;
+      LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("CRLF received, parsing request\n"));
+      /* parse method */
+      if (!strncmp(data, "GET ", 4)) {
+        sp1 = data + 3;
+        /* received GET request */
+        LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Received GET request\"\n"));
+#if LWIP_HTTPD_SUPPORT_POST
+      } else if (!strncmp(data, "POST ", 5)) {
+        /* store request type */
+        is_post = 1;
+        sp1 = data + 4;
+        /* received GET request */
+        LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("Received POST request\n"));
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+      } else {
+        /* null-terminate the METHOD (pbuf is freed anyway wen returning) */
+        data[4] = 0;
+        /* unsupported method! */
+        LWIP_DEBUGF(HTTPD_DEBUG, ("Unsupported request method (not implemented): \"%s\"\n",
+          data));
+        return http_find_error_file(hs, 501);
+      }
+      /* if we come here, method is OK, parse URI */
+      left_len = data_len - ((sp1 +1) - data);
+      sp2 = strnstr(sp1 + 1, " ", left_len);
+#if LWIP_HTTPD_SUPPORT_V09
+      if (sp2 == NULL) {
+        /* HTTP 0.9: respond with correct protocol version */
+        sp2 = strnstr(sp1 + 1, CRLF, left_len);
+        is_09 = 1;
+#if LWIP_HTTPD_SUPPORT_POST
+        if (is_post) {
+          /* HTTP/0.9 does not support POST */
+          goto badrequest;
+        }
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+      }
+#endif /* LWIP_HTTPD_SUPPORT_V09 */
+      uri_len = sp2 - (sp1 + 1);
+      if ((sp2 != 0) && (sp2 > sp1)) {
+        /* wait for CRLFCRLF (indicating end of HTTP headers) before parsing anything */
+        if (strnstr(data, CRLF CRLF, data_len) != NULL) {
+          char *uri = sp1 + 1;
+#if LWIP_HTTPD_SUPPORT_11_KEEPALIVE
+          if (!is_09 && strnstr(data, HTTP11_CONNECTIONKEEPALIVE, data_len)) {
+            hs->keepalive = 1;
+          }
+#endif /* LWIP_HTTPD_SUPPORT_11_KEEPALIVE */
+          /* null-terminate the METHOD (pbuf is freed anyway wen returning) */
+          *sp1 = 0;
+          uri[uri_len] = 0;
+          LWIP_DEBUGF(HTTPD_DEBUG, ("Received \"%s\" request for URI: \"%s\"\n",
+                      data, uri));
+#if LWIP_HTTPD_SUPPORT_POST
+          if (is_post) {
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+            struct pbuf **q = &hs->req;
+#else /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+            struct pbuf **q = inp;
+#endif /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+            err = http_post_request(q, hs, data, data_len, uri, sp2);
+            if (err != ERR_OK) {
+              /* restore header for next try */
+              *sp1 = ' ';
+              *sp2 = ' ';
+              uri[uri_len] = ' ';
+            }
+            if (err == ERR_ARG) {
+              goto badrequest;
+            }
+            return err;
+          } else
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+          {
+            if (hs->is_websocket) {
+              if(websocket_open_cb) 
+                websocket_open_cb(pcb, uri);
+              return ERR_OK; // We handled this
+            } else {
+              return http_find_file(hs, uri, is_09);
+            }
+          }
+        }
+      } else {
+        LWIP_DEBUGF(HTTPD_DEBUG, ("invalid URI\n"));
+      }
+    }
+  }
+
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+  clen = pbuf_clen(hs->req);
+  if ((hs->req->tot_len <= LWIP_HTTPD_REQ_BUFSIZE) &&
+    (clen <= LWIP_HTTPD_REQ_QUEUELEN)) {
+    /* request not fully received (too short or CRLF is missing) */
+    return ERR_INPROGRESS;
+  } else
+#endif /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+  {
+#if LWIP_HTTPD_SUPPORT_POST
+badrequest:
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+    LWIP_DEBUGF(HTTPD_DEBUG, ("bad request\n"));
+    /* could not parse request */
+    return http_find_error_file(hs, 400);
+  }
+}
+
+static err_t
+http_poll(void *arg, struct tcp_pcb *pcb)
+{ //ws_act=1;
+  struct http_state *hs = (struct http_state *)arg;
+  LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("http_poll: pcb=%p hs=%p pcb_state=%s\n",
+    (void*)pcb, (void*)hs, tcp_debug_state_str(pcb->state)));
+
+  if (hs == NULL) {
+    err_t closed;
+    /* arg is null, close. */
+    LWIP_DEBUGF(HTTPD_DEBUG, ("http_poll: arg is NULL, close\n"));
+    closed = http_close_conn(pcb, NULL);
+    LWIP_UNUSED_ARG(closed);
+#if LWIP_HTTPD_ABORT_ON_CLOSE_MEM_ERROR
+    if (closed == ERR_MEM) {
+       tcp_abort(pcb);
+       return ERR_ABRT;
+    }
+#endif /* LWIP_HTTPD_ABORT_ON_CLOSE_MEM_ERROR */
+    return ERR_OK;
+  } else {
+    hs->retries++;
+    if (hs->retries == ((hs->is_websocket) ? WS_TIMEOUT : HTTPD_MAX_RETRIES)) {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("http_poll: too many retries, close\n"));
+      http_close_conn(pcb, hs);
+      //ws_act=0;
+      return ERR_OK;
+    }
+
+    /* If this connection has a file open, try to send some more data. If
+     * it has not yet received a GET request, don't do this since it will
+     * cause the connection to close immediately. */
+    if(hs && (hs->handle)) {
+      LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("http_poll: try to send more data\n"));
+      if(http_send(pcb, hs)) {
+        /* If we wrote anything to be sent, go ahead and send it now. */
+        LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("tcp_output\n"));
+        tcp_output(pcb);
+      }
+    }
+  }
+  //ws_act=0;
+  return ERR_OK;
+}
+
+static err_t
+websocket_send_close(struct tcp_pcb *pcb)
+{
+  const u8_t buf[] = {0x88, 0x02, 0x03, 0xe8};
+  u16_t len = sizeof (buf);
+  LWIP_DEBUGF(HTTPD_DEBUG, ("[wsoc] closing connection\n"));
+
+  //websocket_task_created=0;
+  //websocket_task_first=1;
+
+  return tcp_write(pcb, buf, len, TCP_WRITE_FLAG_COPY);
+}
+
+static err_t
+http_close_or_abort_conn(struct tcp_pcb *pcb, struct http_state *hs, u8_t abort_conn)
+{
+  err_t err;
+  LWIP_DEBUGF(HTTPD_DEBUG, ("Closing connection %p\n", (void*)pcb));
+
+#if LWIP_HTTPD_SUPPORT_POST
+  if (hs != NULL) {
+    if ((hs->post_content_len_left != 0)
+#if LWIP_HTTPD_POST_MANUAL_WND
+       || ((hs->no_auto_wnd != 0) && (hs->unrecved_bytes != 0))
+#endif /* LWIP_HTTPD_POST_MANUAL_WND */
+       ) {
+      /* make sure the post code knows that the connection is closed */
+      http_post_response_filename[0] = 0;
+      httpd_post_finished(hs, http_post_response_filename, LWIP_HTTPD_POST_MAX_RESPONSE_URI_LEN);
+    }
+  }
+#endif /* LWIP_HTTPD_SUPPORT_POST*/
+
+  if (hs != NULL) {
+    if (hs->is_websocket)
+      websocket_send_close(pcb);
+
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+    if (hs->req != NULL) {
+      /* this should not happen */
+      LWIP_DEBUGF(HTTPD_DEBUG, ("Freeing buffer (malformed request?)\n"));
+      pbuf_free(hs->req);
+      hs->req = NULL;
+    }
+#endif
+  }
+
+  tcp_arg(pcb, NULL);
+  tcp_recv(pcb, NULL);
+  tcp_err(pcb, NULL);
+  tcp_poll(pcb, NULL, 0);
+  tcp_sent(pcb, NULL);
+  if (hs != NULL) {
+    http_state_free(hs);
+  }
+
+  if (abort_conn) {
+    tcp_abort(pcb);
+    return ERR_OK;
+  }
+  err = tcp_close(pcb);
+  if (err != ERR_OK) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("Error %d closing %p\n", err, (void*)pcb));
+    /* error closing, try again later in poll */
+    tcp_poll(pcb, http_poll, HTTPD_POLL_INTERVAL);
+  }
+  return err;
+}
+
+static err_t
+http_close_conn(struct tcp_pcb *pcb, struct http_state *hs)
+{
+  return http_close_or_abort_conn(pcb, hs, 0);
+}
+
 /**
   * @brief sends data found in  member "file" of a http_state struct
   * @param pcb: pointer to a tcp_pcb struct
   * @param hs: pointer to a http_state struct
   * @retval None
   */
-static void send_data(struct tcp_pcb *pcb, struct http_state *hs)
+static void send_data(struct tcp_pcb *pcb, struct http_state2 *hs)
 {
   err_t err;
-  u16_t len;
+  u16_t/*u32_t*/ len;
 
   /* We cannot send more data than space available in the send
      buffer */
@@ -298,7 +1640,8 @@ static void send_data(struct tcp_pcb *pcb, struct http_state *hs)
   {
     len = hs->left;
   }
-  err = tcp_write(pcb, hs->file, len, 0);
+  //err = tcp_write(pcb, hs->file, len, 0);
+  err = tcp_write(pcb, hs->file, len, 0x01);
   if (err == ERR_OK)
   {
     hs->file += len;
@@ -312,18 +1655,21 @@ static void send_data(struct tcp_pcb *pcb, struct http_state *hs)
   * @param pcb: pointer on tcp_pcb structure
   * @retval err_t
   */
-static err_t http_poll(void *arg, struct tcp_pcb *pcb)
-{
+ 
+static err_t http_poll2(void *arg, struct tcp_pcb *pcb)
+{ //wp_act=1;
   if (arg == NULL)
   {
     tcp_close(pcb);
   }
   else
   {
-    send_data(pcb, (struct http_state *)arg);
+    send_data(pcb, (struct http_state2 *)arg);
   }
+  //wp_act=0;
   return ERR_OK;
 }
+
 
 /**
   * @brief callback function called after a successfull TCP data packet transmission  
@@ -332,9 +1678,11 @@ static err_t http_poll(void *arg, struct tcp_pcb *pcb)
   * @param len
   * @retval err : LwIP error code
   */
-static err_t http_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
-{
-  struct http_state *hs;
+//old version
+ 
+static err_t http_sent2(void *arg, struct tcp_pcb *pcb, u16_t len)
+{ //wp_act=1;
+  struct http_state2 *hs;
 
   hs = arg;
 
@@ -347,14 +1695,103 @@ static err_t http_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
     close_conn(pcb, hs);
     if(resetpage ==1)
     { 
-      /* Generate a software reset */
-      NVIC_SystemReset();
+      // Generate a software reset 
+      //NVIC_SystemReset(); //Elsan dis
     }
       
   }
+  //wp_act=0;
   return ERR_OK;
 }
 
+
+//new version
+static err_t
+http_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
+{ //ws_act=1;
+  struct http_state *hs = (struct http_state *)arg;
+
+  LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("http_sent %p\n", (void*)pcb));
+
+  LWIP_UNUSED_ARG(len);
+
+  if (hs == NULL) {
+    //ws_act=0;
+    return ERR_OK;
+  }
+
+  hs->retries = 0;
+
+  http_send(pcb, hs);
+  //ws_act=0;
+  return ERR_OK;
+}
+
+
+static err_t
+websocket_parse(struct tcp_pcb *pcb, struct pbuf *p)
+{
+  u8_t *data = (u8_t *) p->payload;
+  u16_t data_len = p->len;
+
+  if (data != NULL && data_len > 1) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("[wsoc] frame received\n"));
+    if ((data[0] & 0x80) == 0) {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("Warning: continuation frames not supported\n"));
+      return ERR_OK;
+    }
+    u8_t opcode = data[0] & 0x0F;
+    switch (opcode) {
+      case WS_TEXT_MODE:
+      case WS_BIN_MODE:
+        LWIP_DEBUGF(HTTPD_DEBUG, ("Opcode: 0x%hX, frame length: %d\n", opcode, data_len));
+        if (data_len > 6 && websocket_cb != NULL) {
+          int data_offset = 6;
+          u8_t *dptr = &data[6];
+          u8_t *kptr = &data[2];
+          u16_t len = data[1] & 0x7F;
+
+          if (len == 127) {
+            /* most likely won't happen inside non-fragmented frame */
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Warning: frame is too long\n"));
+            return ERR_OK;
+          } else if (len == 126) {
+            /* extended length */
+            dptr += 2;
+            kptr += 2;
+            data_offset += 2;
+            len = (data[2] << 8) | data[3];
+          }
+
+          data_len -= data_offset;
+
+          if (len > data_len) {
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Error: incorrect frame size\n"));
+            return ERR_VAL;
+          }
+
+          if (data_len != len)
+            LWIP_DEBUGF(HTTPD_DEBUG, ("Warning: segmented frame received\n"));
+
+          /* unmask */
+          for (int i = 0; i < len; i++)
+            *(dptr++) ^= kptr[i % 4];
+
+          /* user callback */
+          websocket_cb(pcb, &data[data_offset], len, opcode);
+        }
+        break;
+      case 0x08: // close
+        LWIP_DEBUGF(HTTPD_DEBUG, ("Close request\n"));
+        return ERR_CLSD;
+      default:
+        LWIP_DEBUGF(HTTPD_DEBUG, ("Unsupported opcode 0x%hX\n", opcode));
+        break;
+    }
+    return ERR_OK;
+  }
+  return ERR_VAL;
+}
 
 /**
   * @brief callback function for handling TCP HTTP traffic
@@ -366,18 +1803,146 @@ static err_t http_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
   */
 static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t err)
 {
-  int32_t i,len=0;
-  uint32_t DataOffset, FilenameOffset;
-  char *data, *ptr, filename[40], login[LOGIN_SIZE+1];
-  struct fs_file file = {0, 0};
-  struct http_state *hs;
-
+  err_t parsed = ERR_ABRT;
+  struct http_state *hs = (struct http_state *)arg;
+  
 #ifdef USE_LCD
   char message[46];
 #endif
   
-  hs = arg;
+  //Elsan websocket
+  
+  if (hs != NULL && hs->is_websocket) {
+    if (p == NULL) {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("http_recv: buffer error\n"));
+      http_close_or_abort_conn(pcb, hs, 0);
+      //websocket_task_first=1;   //Test for connect/disconnect
+      //websocket_task_created=0; //Test for connect/disconnect
+      //ws_act=0;
+      return ERR_BUF;
+    }
+    tcp_recved(pcb, p->tot_len);
+    err_t err = websocket_parse(pcb, p);     
+    if (p != NULL) {
+      /* otherwise tcp buffer hogs */
+      LWIP_DEBUGF(HTTPD_DEBUG, ("[wsoc] freeing buffer\n"));
+      pbuf_free(p);
+    }
+    if (err == ERR_CLSD) {
+      //hs->is_websocket=0; //Elsan test
+      http_close_conn(pcb, hs);
+      //websocket_task_first=1;   //Test for connect/disconnect
+      //websocket_task_created=0; //Test for connect/disconnect
+    }
+    /* reset timeout */
+    hs->retries = 0;
+    //ws_act=0;
+    return ERR_OK;
+  }
 
+  if ((err != ERR_OK) || (p == NULL) || (hs == NULL)) {
+    /* error or closed by other side? */
+    if (p != NULL) {
+      /* Inform TCP that we have taken the data. */
+      tcp_recved(pcb, p->tot_len);
+      pbuf_free(p);
+    }
+    if (hs == NULL) {
+      /* this should not happen, only to be robust */
+      LWIP_DEBUGF(HTTPD_DEBUG, ("Error, http_recv: hs is NULL, close\n"));
+    }
+    http_close_conn(pcb, hs);
+    //websocket_task_first=1;   //Test for connect/disconnect
+    //websocket_task_created=0; //Test for connect/disconnect
+    //ws_act=0;
+    return ERR_OK;
+  }
+
+  #if LWIP_HTTPD_SUPPORT_POST && LWIP_HTTPD_POST_MANUAL_WND
+  if (hs->no_auto_wnd) {
+     hs->unrecved_bytes += p->tot_len;
+  } else
+  #endif /* LWIP_HTTPD_SUPPORT_POST && LWIP_HTTPD_POST_MANUAL_WND */
+  {
+    /* Inform TCP that we have taken the data. */
+    tcp_recved(pcb, p->tot_len);
+  }
+
+  #if LWIP_HTTPD_SUPPORT_POST
+  if (hs->post_content_len_left > 0) {
+    /* reset idle counter when POST data is received */
+    hs->retries = 0;
+    /* this is data for a POST, pass the complete pbuf to the application */
+    http_post_rxpbuf(hs, p);
+    /* pbuf is passed to the application, don't free it! */
+    if (hs->post_content_len_left == 0) {
+      /* all data received, send response or close connection */
+      http_send(pcb, hs);
+    }
+    return ERR_OK;
+  } else
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+  {
+    if (hs->handle == NULL) {
+      parsed = http_parse_request(&p, hs, pcb);
+      LWIP_ASSERT("http_parse_request: unexpected return value", parsed == ERR_OK
+        || parsed == ERR_INPROGRESS ||parsed == ERR_ARG
+        || parsed == ERR_USE || parsed == ERR_MEM);
+    } else {
+      LWIP_DEBUGF(HTTPD_DEBUG, ("http_recv: already sending data\n"));
+    }
+#if LWIP_HTTPD_SUPPORT_REQUESTLIST
+    if (parsed != ERR_INPROGRESS) {
+      /* request fully parsed or error */
+      if (hs->req != NULL) {
+        pbuf_free(hs->req);
+        hs->req = NULL;
+      }
+    }
+#else /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+    if (p != NULL) {
+      /* pbuf not passed to application, free it now */
+      pbuf_free(p);
+    }
+#endif /* LWIP_HTTPD_SUPPORT_REQUESTLIST */
+    if (parsed == ERR_OK) {
+#if LWIP_HTTPD_SUPPORT_POST
+      if (hs->post_content_len_left == 0)
+#endif /* LWIP_HTTPD_SUPPORT_POST */
+      {
+        LWIP_DEBUGF(HTTPD_DEBUG | LWIP_DBG_TRACE, ("http_recv: data %p len %"S32_F"\n", hs->file, hs->left));
+        http_send(pcb, hs); //Elsan dis
+        //send_data(pcb, hs);       //Elsan test
+        //tcp_sent(pcb, http_sent); //Elsan test
+      }
+    } else if (parsed == ERR_ARG || parsed == ERR_MEM) {
+      /* @todo: close on ERR_USE? */
+      //pbuf_free(p); //Elsan test
+      http_close_conn(pcb, hs);
+      //websocket_task_first=1;   //Test for connect/disconnect
+      //websocket_task_created=0; //Test for connect/disconnect
+    }
+  }
+  //ws_act=0;
+  return ERR_OK;
+}
+
+
+//For HTTP server only.
+static err_t http_recv2(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t err)
+{ //wp_act=1;
+  int32_t i,len=0;
+  uint32_t DataOffset, FilenameOffset;
+  char *data, *ptr, /*filename[100],*/ login[LOGIN_SIZE+1];
+  struct fs_file2 file = {0, 0};
+  struct http_state2 *hs;
+  FRESULT res;
+  /*uint16_t*/ /*uint32_t*/ UINT byteswritten; //Elsan
+  
+#ifdef USE_LCD
+  char message[46];
+#endif  
+  hs = arg;
   if (err == ERR_OK && p != NULL)
   {
     /* Inform TCP that we have taken the data */
@@ -387,31 +1952,51 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
     {
       data = p->payload;
       len = p->tot_len;
-      
+  
       /* process HTTP GET Login page requests */
       if (strncmp(data, "GET / HTTP", 10) == 0)
-      {
+      { 
+        web_page_prog=1; //start.
+        //web1=1;
         /*send the login page (which is the index page) */
         htmlpage = LoginPage;
-        fs_open("/index.html", &file);
+        fs_open2("/index.html", &file);
         hs->file = file.data;
         hs->left = file.len;
-        pbuf_free(p);
+        pbuf_free(p); 
         /* send index.html page */ 
         send_data(pcb, hs);        
         /* Tell TCP that we wish be to informed of data that has been
         successfully sent by a call to the http_sent() function. */
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
+        //web1=1; //finished.
       }
-
-      else if (strncmp(data,"GET /js/jquery.min.js",21)==0)
-      {
-        fs_open("/js/jquery.min.js", &file);        
+      
+      else if (strncmp(data,"GET /css/main.css",17)==0)
+      { web_page_prog=1;
+        //web5=1;
+        fs_open2("/css/main.css", &file);        
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
+        //web5=1;
+      }
+
+      else if (strncmp(data,"GET /js/jquery.min.js",21)==0)
+      { web_page_prog=1;
+        //web2=1;
+        fs_open2("/js/jquery.min.js", &file);        
+        hs->file = file.data;
+        hs->left = file.len;
+        pbuf_free(p);
+        send_data(pcb, hs);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
+        //web2=1;
       }
       /*
       else if (strncmp(data,"GET /js/bootstrap.min.js",24)==0)
@@ -425,56 +2010,69 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
       }
       */
       else if (strncmp(data,"GET /js/apexcharts.min.js",25)==0)
-      {
-        fs_open("/js/apexcharts.min.js", &file);        
+      { web_page_prog=1;
+        //web3=1;
+        fs_open2("/js/apexcharts.min.js", &file);        
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
+        //web3=1;
       }
 
       else if (strncmp(data,"GET /js/main.js",15)==0)
-      {
-        fs_open("/js/main.js", &file);        
+      { web_page_prog=1;
+        //web4=1;
+        fs_open2("/js/main.js", &file);        
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
+        //web4=1;
       }
-      
+      /*
       else if (strncmp(data,"GET /css/bootstrap.min.css",26)==0)
-      {
+      { web_page_prog=1;
         fs_open("/css/bootstrap.min.css", &file);        
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
+        //web_page_prog=0;
       }
+      */
       
-      else if (strncmp(data,"GET /css/main.css",17)==0)
-      {
-        fs_open("/css/main.css", &file);        
+      else if (strncmp(data,"GET /images/zaxe_small.png",26)==0)
+      { web_page_prog=1;
+        //web6=1;
+        fs_open2("/images/zaxe_small.png", &file);        
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;  //Last file in index.html so can be put here. But distributing loading of these files in the main loop is better.
+        //web6=1;
       }
 
-      else if (strncmp(data,"GET /images/zaxe_small.png",26)==0)
-      {
-        fs_open("/images/zaxe_small.png", &file);        
+      else if (strncmp(data,"GET /favicon.ico",16)==0)
+      { web_page_prog=1;
+        fs_open2("/favicon.ico", &file);
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
+        //web_page_prog=0;
       }
 
       /* Check if request to get ST.gif */
+      /*
       else if (strncmp(data,"GET /STM32F4xx_files/ST.gif",27)==0)
       {
         fs_open("/STM32F4xx_files/ST.gif", &file);
@@ -486,7 +2084,8 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }
-
+      */
+     /*
       else if (strncmp(data,"GET /STM32F4xx_files/stm32.jpg",30)==0)
       {
         fs_open("/STM32F4xx_files/stm32.jpg", &file);
@@ -496,7 +2095,8 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }
-
+      */
+     /*
       else if (strncmp(data,"GET /images/499.jpg",19)==0)
       {
         fs_open("/images/499.jpg", &file);
@@ -506,7 +2106,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }
-
+      */
       /*else if (strncmp(data,"GET /STM32F4xx_files/logo.jpg",29)==0)
       {
         fs_open("/STM32F4xx_files/logo.jpg", &file);
@@ -516,7 +2116,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }*/
-
+      /*
       else if (strncmp(data,"GET /STM32F4xxTASKS.html", 24)==0)
       {
     	  //htmlpage = FileUploadPage;
@@ -531,7 +2131,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }
-
+      */
       //New
       else if (strncmp(data,"GET /WebUpdate.html", 19)==0)
       {
@@ -539,11 +2139,12 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         hs->left = strlen(/*buf_html*//*PAGE_START2*/PAGE_START3);
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
       }
-
+      
       else if (strncmp(data,"GET /readADC1", 13)==0)
-      {
+      //{if(!web_page_prog) {
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {
         DynWebPage2();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
@@ -551,60 +2152,61 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
       }
+      }
 
-      //else if (strncmp(data,"POST /readADC3", 14)==0)
-      else if (strncmp(data,"GET /readADC3", 13)==0)
+      /*else if (strncmp(data,"GET /readADC3", 13)==0)
       {
         DynWebPage5();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
-        //tcp_sent(pcb, http_sent);
-      }
+      }*/
 
-      //else if (strncmp(data,"POST /readVal8", 14)==0)
-      else if (strncmp(data,"GET /readVal8", 13)==0)
-      {
+      /*else if (strncmp(data,"GET /readVal8", 13)==0)
         DynWebPage8();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
-        //tcp_sent(pcb, http_sent);
-      }
+      }*/
       
       else if (strncmp(data,"GET /readVal20", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage20();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
+      }
       } 
 
       else if (strncmp(data,"GET /readVal21", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage21();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
+      }
       }  
 
       else if (strncmp(data,"GET /readVal22", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage22();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
+      }
       }   
 
-      //else if (strncmp(data,"POST /readVal9", 14)==0)
       else if (strncmp(data,"GET /readVal9", 13)==0)
       {
         DynWebPage9();
@@ -612,12 +2214,12 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
-        //tcp_sent(pcb, http_sent);
       }
 
       //else if (strncmp(data,"POST /readVal01", 15)==0)
       else if (strncmp(data,"GET /readVal01", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage01();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
@@ -625,10 +2227,12 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
       }
+      }
 
       //else if (strncmp(data,"POST /readVal02", 15)==0)
       else if (strncmp(data,"GET /readVal02", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage02();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
@@ -636,10 +2240,12 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
       }
+      }
 
       //else if (strncmp(data,"POST /readVal03", 15)==0)
       else if (strncmp(data,"GET /readVal03", 14)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage03();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
@@ -647,9 +2253,11 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
       }
+      }
 
       else if (strncmp(data,"GET /readADC2", 13)==0)
-      {
+      //{if(!web_page_prog){
+      {if(1/*!web_page_prog*/ /*&& !ws_act*/) {  
         DynWebPage4();
         hs->file = buf_html;
         hs->left = strlen(buf_html);
@@ -657,8 +2265,9 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         //tcp_sent(pcb, http_sent);
       }
-
-      else if (strncmp(data,"GET /setLED", 11)==0)
+      }
+      
+      /*else if (strncmp(data,"GET /setLED", 11)==0)
       {
         char* t_state = strstr(data,"LEDstate=");
     	  LEDstate=*(t_state+9);
@@ -667,21 +2276,21 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         hs->left = strlen(buf_html);
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
-      }
+        tcp_sent(pcb, http_sent2);
+      }*/
       ////////////////////////////////////////////
 
       else if (strncmp(data,"GET /upload.html", 16)==0)
       {
         htmlpage = FileUploadPage;
-        fs_open("/upload.html", &file);
+        fs_open2("/upload.html", &file);
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);
         send_data(pcb, hs);
-        tcp_sent(pcb, http_sent);
+        tcp_sent(pcb, http_sent2);
        }
-
+      /*
       else if (strncmp(data,"GET /STM32F4xx.html", 19)==0)
       {
         htmlpage = WelcomePage;
@@ -692,8 +2301,9 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         send_data(pcb, hs);
         tcp_sent(pcb, http_sent);
       }
-
+      */
       /* process HTTP GET reset mcu requests */
+      /*
       else if ((strncmp(data, "GET /resetmcu.cgi", 17) ==0)&&(htmlpage == UploadDonePage))
       {
         htmlpage = ResetDonePage;
@@ -701,18 +2311,18 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
         hs->file = file.data;
         hs->left = file.len;
         pbuf_free(p);        
-        /* send reset.html page */ 
+        // send reset.html page  
         send_data(pcb, hs);   
         resetpage = 1;        
-        /* Tell TCP that we wish be to informed of data that has been
-        successfully sent by a call to the http_sent() function. */
+        // Tell TCP that we wish be to informed of data that has been successfully sent by a call to the http_sent() function.
         tcp_sent(pcb, http_sent);
       }
-      
+      */
       /* process POST request for checking login */
+      /*
       else if ((strncmp(data, "POST /checklogin.cgi",20)==0)&&(htmlpage== LoginPage))
       {
-          /* parse packet for the username & password */
+          // parse packet for the username & password 
           for (i=0;i<len;i++)
           {
              if (strncmp ((char*)(data+i), "username=", 9)==0)
@@ -730,24 +2340,23 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
                else
                {
                  htmlpage = LoginPage;
-                 /* reload index.html */
+                 // reload index.html 
                  fs_open("/index.html", &file);
                }
                  hs->file = file.data;
                  hs->left = file.len; 
                  pbuf_free(p);  
                  
-                 /* send index.html page */ 
+                 // send index.html page  
                  send_data(pcb, hs);
           
-                 /* Tell TCP that we wish be to informed of data that has been
-                 successfully sent by a call to the http_sent() function. */
+                 // Tell TCP that we wish be to informed of data that has been successfully sent by a call to the http_sent() function. 
                  tcp_sent(pcb, http_sent); 
                break;
              }
           }     
       }
-    
+      */
       /* process POST request for file upload and incoming data packets after POST request*/
       else if (((strncmp(data, "POST /upload.cgi",16)==0)||(DataFlag >=1))&&(htmlpage == FileUploadPage))
       { 
@@ -833,7 +2442,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
            {
              htmlpage = FileUploadPage;
              /* no filename, in this case reload upload page */
-             fs_open("/upload.html", &file);
+             fs_open2("/upload.html", &file);
              hs->file = file.data;
              hs->left = file.len;
              pbuf_free(p);
@@ -843,26 +2452,35 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
           
              /* Tell TCP that we wish be to informed of data that has been
              successfully sent by a call to the http_sent() function. */
-             tcp_sent(pcb, http_sent); 
+             tcp_sent(pcb, http_sent2); 
              DataFlag=0;
              return ERR_OK;
              
            }
              
-#ifdef USE_LCD                
-           LCD_UsrLog("IAP using HTTP\n");
-           sprintf(message, "File: %s",filename);
-           LCD_UsrLog("%s\n",message);
-           LCD_UsrLog("  State: Erasing...\n");
-#endif /* USE_LCD */
+//#ifdef USE_LCD                
+           //LCD_UsrLog("IAP using HTTP\n");
+           //sprintf(message, "File: %s",filename);
+
+           sprintf(http_filename, "0:%s",filename); //Elsan 
+           strcpy(fname2,http_filename);
+           //sprintf(fname2, "0:%s",filename); 
+           //strcpy(fname2, filename);
+
+           //LCD_UsrLog("%s\n",message);
+           //LCD_UsrLog("  State: Erasing...\n");
+//#endif /* USE_LCD */
           
            TotalData =0;
            /* init flash */
            //FLASH_If_Init();	//Elsan dis
            /* erase user flash area */
            //FLASH_If_Erase(USER_FLASH_FIRST_PAGE_ADDRESS); //Elsan dis
-          
-           FlashWriteAddress = USER_FLASH_FIRST_PAGE_ADDRESS;
+           //UPLOAD_COMPLETED=0;
+           usb_file_open_wr2();
+           USB_write_start=1;
+           HTTP_fileopen=1;
+           //FlashWriteAddress = USER_FLASH_FIRST_PAGE_ADDRESS;
           
 #ifdef USE_LCD
             /*indicate start of flash programming */
@@ -897,7 +2515,45 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
            /* write data in Flash */
            //if (len)
            //IAP_HTTP_writedata(ptr,len); //Elsan disabling this line jumps to below which is wrong. Also disable if(len).
-          
+           
+           /*if(len) {
+              if(buf_wr_len + len > USB_BUF_LEN){
+                  res = f_write(&MyFile, buf_wr, buf_wr_len, (void *)&byteswritten);
+                  buf_wr_len=0;
+                  //if((byteswritten == 0) || (res != FR_OK)){
+                  //}
+              }
+              memcpy(buf_wr + buf_wr_len, ptr, len);
+              buf_wr_len+= len;
+           }*/
+           
+           //New algorithm
+           if(len) {
+              if(buf_wr_len + len > USB_BUF_LEN){
+                memcpy(buf_wr + buf_wr_len, ptr, /*len*/USB_BUF_LEN - buf_wr_len);
+                f_write(&MyFile, buf_wr, USB_BUF_LEN, (void *)&byteswritten);
+                memcpy(buf_wr, ptr + (USB_BUF_LEN - buf_wr_len), len - (USB_BUF_LEN - buf_wr_len));
+        	      buf_wr_len= len - (USB_BUF_LEN - buf_wr_len);
+              }
+              else {
+        	      memcpy(buf_wr + buf_wr_len, ptr, len);
+        	      buf_wr_len+= len;
+              }
+           }
+           ///////////////////////
+           //For last data packet only.
+           if(buf_wr_len) {
+              f_write(&MyFile, buf_wr, buf_wr_len, (void *)&byteswritten);  //Some data in buf_wr.
+              buf_wr_len=0;
+           }
+           //f_close(&MyFile); //Moved to main loop.
+           //f_mount(0, 0, 0);
+           //f_mount(0, (TCHAR const*)USBDISKPath, 0);
+           //FATFS_UnLinkDriver(USBDISKPath);
+           
+           USB_write_start=0;
+           UPLOAD_COMPLETED=1;
+
            DataFlag=0;
           
 #ifdef USE_LCD
@@ -907,22 +2563,44 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
 #endif
           htmlpage = UploadDonePage;
           /* send uploaddone.html page */
-          fs_open("/uploaddone.html", &file);
+          fs_open2("/uploaddone.html", &file);
           hs->file = file.data;
           hs->left = file.len;
           send_data(pcb, hs);
           
           /* Tell TCP that we wish be to informed of data that has been
            successfully sent by a call to the http_sent() function. */
-          tcp_sent(pcb, http_sent);  
+          tcp_sent(pcb, http_sent2);
+          //UPLOAD_COMPLETED=1;
         }
         /* not last data packet */
         else
         {
           /* write data in flash */
           //if(len) IAP_HTTP_writedata(ptr,len); //Elsan dis
+          
+          if(len) {
+              if(buf_wr_len + len > USB_BUF_LEN){
+                memcpy(buf_wr + buf_wr_len, ptr, /*len*/USB_BUF_LEN - buf_wr_len);
+                f_write(&MyFile, buf_wr, USB_BUF_LEN, (void *)&byteswritten);
+                memcpy(buf_wr, ptr + (USB_BUF_LEN - buf_wr_len), len - (USB_BUF_LEN - buf_wr_len));
+        	      buf_wr_len= len - (USB_BUF_LEN - buf_wr_len);
+              }
+        	    //if(buf_wr_len + len > USB_BUF_LEN){
+        	    	//res = f_write(&MyFile, buf_wr, buf_wr_len, (void *)&byteswritten); //Better to write exactly 32768 byte.
+        	    	//buf_wr_len=0;
+        	    	/*if((byteswritten == 0) || (res != FR_OK)){
+        	    	 
+        	    	}*/
+        	    //}
+              else {
+        	      memcpy(buf_wr + buf_wr_len, ptr, len);
+        	      buf_wr_len+= len;
+              }
+        	}
+          
         }
-        pbuf_free(p);
+        pbuf_free(p); 
       }
       else
       {
@@ -945,10 +2623,11 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
   if (err == ERR_OK && p == NULL)
   {
     /* received empty frame */
-	//pbuf_free(p);	//Elsan
-    close_conn(pcb, hs);
+	  close_conn(pcb, hs); 
   }
-
+  
+  web_page_prog=0;
+  //wp_act=0;
   return ERR_OK;
 }
 
@@ -959,35 +2638,188 @@ static err_t http_recv(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t er
   * &param  err: Lwip stack error code
   * @retval err
   */
-static err_t http_accept(void *arg, struct tcp_pcb *pcb, err_t err)
-{
-  struct http_state *hs;	
 
-  /* Allocate memory for the structure that holds the state of the connection */
-  hs = mem_malloc(sizeof(struct http_state));	
+//Elsan old version. 
+ 
+static err_t http_accept2(void *arg, struct tcp_pcb *pcb, err_t err)
+{ //wp_act=1;
+  struct http_state2 *hs;	
+
+  // Allocate memory for the structure that holds the state of the connection 
+  hs = mem_malloc(sizeof(struct http_state2));	
 
   if (hs == NULL)
   {
     return ERR_MEM;
   }
 
-  /* Initialize the structure. */
+  // Initialize the structure. 
   hs->file = NULL;
   hs->left = 0;
 
-  /* Tell TCP that this is the structure we wish to be passed for our
-     callbacks. */
+  //tcp_setprio(pcb, TCP_PRIO_MAX); //Elsan test. For fast web page load.
+
+  // Tell TCP that this is the structure we wish to be passed for our callbacks.
   tcp_arg(pcb, hs);
 
-  /* Tell TCP that we wish to be informed of incoming data by a call
-     to the http_recv() function. */
-  tcp_recv(pcb, http_recv);
+  // Tell TCP that we wish to be informed of incoming data by a call to the http_recv() function. 
+  tcp_recv(pcb, http_recv2);
 
   tcp_err(pcb, conn_err);
 
-  tcp_poll(pcb, http_poll, 10);
-
+  tcp_poll(pcb, http_poll2, 10);
+  //wp_act=0;
   return ERR_OK;
+}
+
+
+static void
+http_err(void *arg, err_t err)
+{
+  struct http_state *hs = (struct http_state *)arg;
+  LWIP_UNUSED_ARG(err);
+
+  LWIP_DEBUGF(HTTPD_DEBUG, ("http_err: %s", lwip_strerr(err)));
+
+  if (hs != NULL) {
+    http_state_free(hs);
+  }
+}
+
+//Elsan new version.
+static err_t
+http_accept(void *arg, struct tcp_pcb *pcb, err_t err)
+{ //ws_act=1;
+  struct http_state *hs;
+  struct tcp_pcb_listen *lpcb = (struct tcp_pcb_listen*)arg;
+  LWIP_UNUSED_ARG(err);
+  LWIP_DEBUGF(HTTPD_DEBUG, ("http_accept %p / %p\n", (void*)pcb, arg));
+
+  // Decrease the listen backlog counter 
+  tcp_accepted(lpcb);  //Elsan dis for test.
+  // Set priority 
+  tcp_setprio(pcb, HTTPD_TCP_PRIO);  //Elsan dis for test.
+  //tcp_setprio(pcb, TCP_PRIO_NORMAL); //Elsan test.
+
+  // Allocate memory for the structure that holds the state of the connection - initialized by that function.
+  hs = http_state_alloc();
+
+  //hs = mem_malloc(sizeof(struct http_state)); //Test
+
+  if (hs == NULL) {
+    LWIP_DEBUGF(HTTPD_DEBUG, ("http_accept: Out of memory, RST\n"));
+    //ws_act=0;
+    return ERR_MEM;
+  }
+
+  // Test: Initialize the structure. 
+  //hs->file = NULL;
+  //hs->left = 0;
+  //////////////////////////////
+
+  hs->pcb = pcb;
+
+  // Tell TCP that this is the structure we wish to be passed for our callbacks.
+  tcp_arg(pcb, hs);
+
+  // Set up the various callback functions 
+  tcp_recv(pcb, http_recv);
+  tcp_err(pcb, http_err);
+  //tcp_err(pcb, conn_err); //test
+  tcp_poll(pcb, http_poll, HTTPD_POLL_INTERVAL);
+  tcp_sent(pcb, http_sent); //Elsan dis for test
+  //ws_act=0;
+  return ERR_OK;
+}
+
+static void
+httpd_init_addr(ip_addr_t *local_addr)
+{
+  struct tcp_pcb *pcb;
+  err_t err;
+
+  pcb = tcp_new();
+  LWIP_ASSERT("httpd_init: tcp_new failed", pcb != NULL);
+  tcp_setprio(pcb, HTTPD_TCP_PRIO);
+  /* set SOF_REUSEADDR here to explicitly bind httpd to multiple interfaces */
+  //err = tcp_bind(pcb, local_addr, HTTPD_SERVER_PORT);
+  err = tcp_bind(pcb, local_addr, 9294);
+  LWIP_ASSERT("httpd_init: tcp_bind failed", err == ERR_OK);
+  pcb = tcp_listen(pcb);
+  LWIP_ASSERT("httpd_init: tcp_listen failed", pcb != NULL);
+  /* initialize callback arg and accept callback */
+  tcp_arg(pcb, pcb);
+  tcp_accept(pcb, http_accept);
+  //pcb2=pcb; //Elsan for websocket_task.
+}
+
+void
+httpd_init(void)
+{
+#if HTTPD_USE_MEM_POOL
+  LWIP_ASSERT("memp_sizes[MEMP_HTTPD_STATE] >= sizeof(http_state)",
+     memp_sizes[MEMP_HTTPD_STATE] >= sizeof(http_state));
+  LWIP_ASSERT("memp_sizes[MEMP_HTTPD_SSI_STATE] >= sizeof(http_ssi_state)",
+     memp_sizes[MEMP_HTTPD_SSI_STATE] >= sizeof(http_ssi_state));
+#endif
+  LWIP_DEBUGF(HTTPD_DEBUG, ("httpd_init\n"));
+
+  httpd_init_addr(IP_ADDR_ANY);
+}
+
+//#if LWIP_HTTPD_SSI
+void
+http_set_ssi_handler(tSSIHandler ssi_handler, const char **tags, int num_tags)
+{
+  LWIP_DEBUGF(HTTPD_DEBUG, ("http_set_ssi_handler\n"));
+
+  LWIP_ASSERT("no ssi_handler given", ssi_handler != NULL);
+  LWIP_ASSERT("no tags given", tags != NULL);
+  LWIP_ASSERT("invalid number of tags", num_tags > 0);
+
+  g_pfnSSIHandler = ssi_handler;
+  g_ppcTags = tags;
+  g_iNumTags = num_tags;
+}
+//#endif /* LWIP_HTTPD_SSI */
+
+void
+http_set_cgi_handlers(const tCGI *cgis, int num_handlers)
+{
+  LWIP_ASSERT("no cgis given", cgis != NULL);
+  LWIP_ASSERT("invalid number of handlers", num_handlers > 0);
+
+  g_pCGIs = cgis;
+  g_iNumCGIs = num_handlers;
+}
+
+
+
+//void httpd_task(void *pvParameters)
+void httpd_task(void)
+{
+    tCGI pCGIs[] = {
+        {"/gpio", (tCGIHandler) gpio_cgi_handler},
+        {"/about", (tCGIHandler) about_cgi_handler},
+        {"/websockets", (tCGIHandler) websocket_cgi_handler},
+    };
+
+    const char *pcConfigSSITags[] = {
+        "uptime", // SSI_UPTIME
+        "heap",   // SSI_FREE_HEAP
+        "led"     // SSI_LED_STATE
+    };
+
+    /* register handlers and start the server */
+    http_set_cgi_handlers(pCGIs, sizeof (pCGIs) / sizeof (pCGIs[0]));
+    http_set_ssi_handler((tSSIHandler) ssi_handler, pcConfigSSITags,
+            sizeof (pcConfigSSITags) / sizeof (pcConfigSSITags[0]));
+    websocket_register_callbacks((tWsOpenHandler) websocket_open_cb,
+            (tWsHandler) websocket_cb);
+        
+    httpd_init();
+
+    //for (;;);
 }
 
 /**
@@ -1001,12 +2833,17 @@ void IAP_httpd_init(void)
   struct tcp_pcb *pcb;
   //create new pcb
   pcb = tcp_new();
+  //tcp_setprio(pcb, TCP_PRIO_MAX); //Test
+
   // bind HTTP traffic to pcb 
   tcp_bind(pcb, IP_ADDR_ANY, 80);
+  //tcp_bind(pcb, IP_ADDR_ANY, 9294); //test
   // start listening on port 80 
   pcb = tcp_listen(pcb);
   // define callback function for TCP connection setup   
-  tcp_accept(pcb, http_accept);
+  //tcp_accept(pcb, http_accept);
+  tcp_accept(pcb, http_accept2); //For HTTP server.
+  //pcb2=pcb; //Elsan test for websocket_task.
 }
 
 
@@ -1016,11 +2853,12 @@ void IAP_httpd_init(void)
   * @param  file : pointer to a fs_file structure  
   * @retval  1 if success, 0 if fail
   */
-static int fs_open(char *name, struct fs_file *file)
-{
-  struct fsdata_file_noconst *f;
 
-  for (f = (struct fsdata_file_noconst *)FS_ROOT; f != NULL; f = (struct fsdata_file_noconst *)f->next)
+static int fs_open2(char *name, struct fs_file2 *file)
+{
+  struct fsdata_file_noconst2 *f;
+
+  for (f = (struct fsdata_file_noconst2 *)FS_ROOT; f != NULL; f = (struct fsdata_file_noconst2 *)f->next)
   {
     if (!strcmp(name, f->name))
     {
@@ -1031,6 +2869,48 @@ static int fs_open(char *name, struct fs_file *file)
   }
   return 0;
 }
+
+
+err_t
+fs_open(struct fs_file *file, const char *name)
+{
+  //const struct fsdata_file *f;
+  struct fsdata_file_noconst *f;
+
+  if ((file == NULL) || (name == NULL)) {
+     return ERR_ARG;
+  }
+
+#if LWIP_HTTPD_CUSTOM_FILES
+  if (fs_open_custom(file, name)) {
+    file->is_custom_file = 1;
+    return ERR_OK;
+  }
+  file->is_custom_file = 0;
+#endif /* LWIP_HTTPD_CUSTOM_FILES */
+
+  //for (f = FS_ROOT; f != NULL; f = f->next) {
+  for (f = (struct fsdata_file_noconst *)FS_ROOT; f != NULL; f = (struct fsdata_file_noconst *)f->next) { 
+    if (!strcmp(name, (char *)f->name)) {
+      file->data = (const char *)f->data;
+      file->len = f->len;
+      file->index = f->len;
+      file->pextension = NULL;
+      file->http_header_included = f->http_header_included;
+#if HTTPD_PRECALCULATED_CHECKSUM
+      file->chksum_count = f->chksum_count;
+      file->chksum = f->chksum;
+#endif /* HTTPD_PRECALCULATED_CHECKSUM */
+#if LWIP_HTTPD_FILE_STATE
+      file->state = fs_state_init(file, name);
+#endif /* #if LWIP_HTTPD_FILE_STATE */
+      return ERR_OK;
+    }
+  }
+  /* file not found */
+  return ERR_VAL;
+}
+
 
 /**
   * @brief  Extract the Content_Length data from HTML data  
@@ -1079,18 +2959,563 @@ static uint32_t Parse_Content_Length(char *data, uint32_t len)
   return size;
 }
 
+char *gpio_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    for (int i = 0; i < iNumParams; i++) {
+        if (strcmp(pcParam[i], "on") == 0) {
+            uint8_t gpio_num = atoi(pcValue[i]);
+            //gpio_enable(gpio_num, GPIO_OUTPUT);
+            //gpio_write(gpio_num, true);
+        } else if (strcmp(pcParam[i], "off") == 0) {
+            uint8_t gpio_num = atoi(pcValue[i]);
+            //gpio_enable(gpio_num, GPIO_OUTPUT);
+            //gpio_write(gpio_num, false);
+        } else if (strcmp(pcParam[i], "toggle") == 0) {
+            uint8_t gpio_num = atoi(pcValue[i]);
+            //gpio_enable(gpio_num, GPIO_OUTPUT);
+            //gpio_toggle(gpio_num);
+        }
+    }
+    return "/index.ssi";
+}
+
+int32_t ssi_handler(int32_t iIndex, char *pcInsert, int32_t iInsertLen)
+{
+    switch (iIndex) {
+        case SSI_UPTIME:
+            //snprintf(pcInsert, iInsertLen, "%d", xTaskGetTickCount() * portTICK_PERIOD_MS / 1000);
+            break;
+        case SSI_FREE_HEAP:
+            //snprintf(pcInsert, iInsertLen, "%d", (int) xPortGetFreeHeapSize());
+            break;
+        case SSI_LED_STATE:
+            //snprintf(pcInsert, iInsertLen, (GPIO.OUT & BIT(LED_PIN)) ? "Off" : "On");
+            break;
+        default:
+            //snprintf(pcInsert, iInsertLen, "N/A");
+            break;
+    }
+
+    /* Tell the server how many characters to insert */
+    return (strlen(pcInsert));
+}
+
+char *about_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    return "/about.html";
+}
+
+char *websocket_cgi_handler(int iIndex, int iNumParams, char *pcParam[], char *pcValue[])
+{
+    return "/websockets.html";
+}
+
+void websocket_task(void *pvParameter)
+{
+   /*char ws_material[32]="-";
+   //char ws_filename[64]="";
+   int  ws_elapsed_time=0;
+   char ws_estimated_time[32]="-";
+   char is_printing[6]; 
+   char is_paused[6]; 
+   char is_heating[6]; 
+   char is_preheat[6]; 
+   char is_calibrating[6]; 
+   char is_bed_occupied[6]; 
+   char is_usb_present[6];*/
+   /*strcpy(is_printing, "False");
+   strcpy(is_paused, "False");
+   strcpy(is_heating, "False");
+   strcpy(is_preheat, "False");
+   strcpy(is_calibrating, "False");
+   strcpy(is_bed_occupied, "False");
+   strcpy(is_usb_present, "False");*/ 
+
+  //if (HAL_GetTick() - websocketTimer >= 1000){
+  //  websocketTimer =  HAL_GetTick();
+
+   if (noUSB) strcpy(is_usb_present, "False");
+   else strcpy(is_usb_present, "True");
+   if(ws_noUSB!=noUSB) ws_par_ch[16]=1; //Change in is_usb_present.
+   else ws_par_ch[16]=0;
+   
+   //if(isUSB_fileopen) strcpy(is_printing, "True");
+   if(isUSB_fileopen && !USB_write_start) strcpy(is_printing, "True");
+   else strcpy(is_printing, "False");
+   //if((ws_isUSB_fileopen!=isUSB_fileopen)&&isUSB_fileopen) { //New start.
+   if((ws_isUSB_fileopen!=isUSB_fileopen) && isUSB_fileopen && !USB_write_start) { //New start.
+    ws_par_ch[15]=1; //Change in is_printing.
+    ws_par_ch[14]=1; //states_update before fileStarted.
+   }
+   
+   //if((ws_isUSB_fileopen!=isUSB_fileopen)&&!isUSB_fileopen) { //Print finished.
+   if((ws_isUSB_fileopen!=isUSB_fileopen) && !isUSB_fileopen && !USB_write_start) { //Print finished.
+    ws_par_ch[13]=1; //Change in is_printing.
+    strcpy(is_printing, "False");
+   } 
+
+   //if(isUSB_fileopen && strcmp(is_paused, "True")) ws_par_ch[12]=1;  //Print progress.
+   if(isUSB_fileopen && strcmp(is_paused, "True") && !USB_write_start) ws_par_ch[12]=1;  //Print progress.
+   //else ws_par_ch[12]=0;
+     
+
+   if (HAL_GetTick() - websocketTimerN[0] >= 1000){
+    websocketTimerN[0] =  HAL_GetTick();
+
+    struct tcp_pcb *pcb = (struct tcp_pcb *) pvParameter;
+    
+    //for (;;) {
+        if (pcb == NULL || pcb->state != ESTABLISHED) {
+            //printf("Connection closed, deleting task\n");
+            //websocket_task_created=0;
+            //websocket_task_created2=0;
+            websocket_task_createdN[0]=0;
+            ws_client_cnt_del=1; //There is an empty space for a task.
+            //ws_client_cnt_p=0; //Pointer.
+            rm_ip[0].addr=0;
+            //websocket_task_createdN[1]=0;
+            //websocket_task_first=1;
+            websocket_task_firstN[0]=1;
+            return;
+            //break;
+        }
+
+        //int uptime = 1; //xTaskGetTickCount() * portTICK_PERIOD_MS / 1000;
+        //int heap = 2; //(int) xPortGetFreeHeapSize();
+        //int led = 0; //!gpio_read(LED_PIN);
+
+        /* Generate response in JSON format */
+        //char response[64];
+        char response[400]; //309. 350 not enough.
+        
+        //Elsan Ping message before Text.
+        response[0]=0x89;
+        websocket_write(pcb, (unsigned char *) response, /*len*/0, /*WS_BIN_MODE*/9);
+        //return;
+                
+        /*
+        int len = snprintf(response, sizeof (response),
+                "{\"uptime\" : \"%d\","
+                " \"heap\" : \"%d\","
+                " \"led\" : \"%d\"}", uptime, heap, led);
+        */
+
+        int len;
+        if(websocket_task_firstN[0]==0) {
+          if(ws_par_ch[16] /*|| ws_par_ch[15]*/) {
+            len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              ws_par_ch[16]=0;
+              ws_noUSB=noUSB;
+              //ws_par_ch[15]=0;
+          }
+          else if(ws_par_ch[15]) {
+            len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+                            
+                ws_par_ch[15]=0; //broadcastStates for print finished.
+                ws_isUSB_fileopen=isUSB_fileopen;
+              
+          }
+          else if(ws_par_ch[13]) {
+            len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+                            
+                ws_par_ch[13]=0; //broadcastStates for print finished.
+                ws_isUSB_fileopen=isUSB_fileopen;
+              
+          } 
+          else if(ws_par_ch[14]) {
+            len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"estimated_time\" : \"%s\"}", "start_print", ws_filename, "-");
+              ws_par_ch[14]=0;
+              ws_isUSB_fileopen=isUSB_fileopen;
+              
+          }
+          else if(ws_par_ch[12]) {
+            len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"progress\" : \"%d\"}", "print_progress", ws_sdpos*100/ws_filesize);
+            ws_par_ch[12]=0;
+            //ws_isUSB_fileopen=isUSB_fileopen;
+          }
+          else
+          len = snprintf(response, sizeof (response), "{\"event\" : \"%s\"}", "ping");
+          //len = sprintf(response, "{\"event\" : \"%s\"}", /*"ping"*/&rm_ip_str[0][0]);
+          //if(ws_client_cnt>1) len = sprintf(response, "{\"event\" : \"%s %s\"}", /*"ping"*/&rm_ip_str[0][0], &rm_ip_str[1][0]);
+        }
+        else {
+        /*int*/ len = snprintf(response, sizeof (response),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              websocket_task_firstN[0]=0;
+        }  
+
+        //response2[0]=0x89;
+        //websocket_write(pcb, (unsigned char *) response2, 0, 9);
+
+        if (len < sizeof (response))
+            websocket_write(pcb, (unsigned char *) response, len, WS_TEXT_MODE);
+
+        //vTaskDelay(2000 / portTICK_PERIOD_MS);
+        //DELAY_US(1000000);
+    //}
+
+    //vTaskDelete(NULL);
+
+    //websocket_task_first=0;
+    //Elsan test for single send.
+    //websocket_task_created=0;
+    //return;
+   }
+}
+
+/*uint32_t HAL_GetTick2(void)
+{
+  return uwTick2;
+}*/
+
+void websocket_taskN(void *pvParameter, char ws_cnt)
+{  
+  char x;
+
+  //ws_act=1;
+  //Alternative 2.
+  if(waiting_task!=ws_cnt) return;
+  
+  if(HAL_GetTick() - websocketTimerN[ws_cnt] >= 500){ //1600 is good for faster web page load.
+    //websocketTimerN[ws_cnt] =  HAL_GetTick(); //Moving to the end may be more precise. Already set by previous task. It can also be opened here.
+    
+   //Common timer method. 
+   /*websocketTimer=HAL_GetTick();
+   if(websocketTimer - websocketTimer2 >= 500){
+    websocketTimer2 =  websocketTimer;*/
+    
+   if (noUSB) strcpy(is_usb_present, "False");
+   else strcpy(is_usb_present, "True");
+   //if(ws_noUSB!=noUSB) ws_par_ch[16]=1; //Change in is_usb_present.
+   //else ws_par_ch[16]=0;
+   if(ws_noUSBN[ws_cnt] != noUSB) ws_par_chN[16][ws_cnt]=1; //Change in is_usb_present.
+   else ws_par_chN[16][ws_cnt]=0;
+      
+   if(isUSB_fileopen && !USB_write_start) strcpy(is_printing, "True");
+   else strcpy(is_printing, "False");
+   /*if((ws_isUSB_fileopen!=isUSB_fileopen) && isUSB_fileopen && !USB_write_start) { //New start.
+    ws_par_ch[15]=1; //Change in is_printing.
+    ws_par_ch[14]=1; //states_update before fileStarted.
+   }*/
+   if((ws_isUSB_fileopenN[ws_cnt] != isUSB_fileopen) && isUSB_fileopen && !USB_write_start) { //New start.
+    ws_par_chN[15][ws_cnt]=1; //Change in is_printing.
+    ws_par_chN[14][ws_cnt]=1; //states_update before fileStarted.
+   }
+      
+   /*if((ws_isUSB_fileopen!=isUSB_fileopen) && !isUSB_fileopen && !USB_write_start) { //Print finished.
+    ws_par_ch[13]=1; //Change in is_printing.
+    strcpy(is_printing, "False");
+   }*/
+   if((ws_isUSB_fileopenN[ws_cnt] != isUSB_fileopen) && !isUSB_fileopen && !USB_write_start) { //Print finished.
+    ws_par_chN[13][ws_cnt]=1; //Change in is_printing.
+    strcpy(is_printing, "False");
+   }
+
+   //if(isUSB_fileopen && strcmp(is_paused, "True") && !USB_write_start) ws_par_ch[12]=1;  //Print progress.
+   if(isUSB_fileopen && strcmp(is_paused, "True") && !USB_write_start) ws_par_chN[12][ws_cnt]=1;  //Print progress.
+  
+   //Working point. Alternative 1.
+   //if(waiting_task!=ws_cnt) return;
+   //if (HAL_GetTick() - websocketTimerN[ws_cnt] >= 2000){
+   // websocketTimerN[ws_cnt] =  HAL_GetTick();
+
+    //struct tcp_pcb *pcb = (struct tcp_pcb *) pvParameter;
+    pcbWS = (struct tcp_pcb *) pvParameter;
+    //ethernetif_input(&gnetif);
+    //for (;;) {
+        if (pcbWS == NULL || pcbWS->state != ESTABLISHED) {
+            //printf("Connection closed, deleting task\n");
+            //websocket_task_created=0;
+            //websocket_task_created2=0;
+            websocket_task_createdN[ws_cnt]=0;
+            //ws_client_cnt_del=1; //There is an empty space for a task.
+            //ws_client_cnt_p=ws_cnt; //Pointer.
+            //ws_client_cnt_del++;
+            //ws_client_cnt_p[ws_client_cnt_del]=ws_cnt; //Pointer.
+            ws_client_cnt_p[ws_cnt]=1; //Pointer. 1: Deleted.
+            if(ws_client_cntR>0) ws_client_cntR--;
+            rm_ip[ws_cnt].addr=0;
+            //websocket_task_first=1;
+            websocket_task_firstN[ws_cnt]=1;
+            //Delay between tasks.
+            //char x;
+            x=0;
+            waiting_task++;
+            if(waiting_task > 15) waiting_task=0;
+            websocketTimerN[waiting_task]=HAL_GetTick();
+            //Check whether task is created. If not continue to the next one.
+            while(websocket_task_createdN[waiting_task]==0) {
+              //ethernetif_input(&gnetif);
+              waiting_task++;
+              if(waiting_task > 15) waiting_task=0;
+              websocketTimerN[waiting_task]=HAL_GetTick();
+              //x++;
+              //No active task remained.
+              if (x>15) {
+                waiting_task=0;
+                //Reset all timers here.
+                websocketTimerN[0]=HAL_GetTick();
+                //ws_act=0;
+                return; //No task remained.
+              }
+              x++;
+            }
+            //ws_act=0;
+            return;
+            //break;
+        }
+    
+        //char response[400]; //309. 350 not enough. Global.
+        memset(responseWS, 0x00, 400);
+        
+        //Elsan Ping message before Text.
+        responseWS[0]=0x89;
+        responseWS[0]=0x00;
+        ///*if(eth_in==0)*/ {eth_in=1; ethernetif_input(&gnetif); eth_in=0;}
+        //websocket_write(pcbWS, (unsigned char *) responseWS, /*len*/0, /*WS_BIN_MODE*/9);
+        //while(websocket_write(pcbWS, (unsigned char *) responseWS, 0, 9)!=ERR_OK) ;//websocket_write(pcbWS, (unsigned char *) responseWS, 0, 9);
+        //return;
+        ///*if(eth_in==0)*/ {eth_in=1; ethernetif_input(&gnetif); eth_in=0;}
+        
+        int len;
+        if(websocket_task_firstN[ws_cnt]==0) {
+          //if(ws_par_ch[16] /*|| ws_par_ch[15]*/) {
+          if(ws_par_chN[16][ws_cnt]) {
+            len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              //ws_par_ch[16]=0;
+              //ws_noUSB=noUSB;
+              ws_par_chN[16][ws_cnt]=0;
+              ws_noUSBN[ws_cnt]=noUSB;
+          }
+          //else if(ws_par_ch[15]) {
+          else if(ws_par_chN[15][ws_cnt]) {
+            len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+                            
+                //ws_par_ch[15]=0; //broadcastStates for print finished.
+                //ws_isUSB_fileopen=isUSB_fileopen;
+                ws_par_chN[15][ws_cnt]=0; //broadcastStates for print finished.
+                ws_isUSB_fileopenN[ws_cnt]=isUSB_fileopen;
+              
+          }
+          //else if(ws_par_ch[13]) {
+          else if(ws_par_chN[13][ws_cnt]) {
+            len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+                            
+                //ws_par_ch[13]=0; //broadcastStates for print finished.
+                //ws_isUSB_fileopen=isUSB_fileopen;
+                ws_par_chN[13][ws_cnt]=0; //broadcastStates for print finished.
+                ws_isUSB_fileopenN[ws_cnt]=isUSB_fileopen;
+              
+          } 
+          //else if(ws_par_ch[14]) {
+          else if(ws_par_chN[14][ws_cnt]) {
+            len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"estimated_time\" : \"%s\"}", "start_print", ws_filename, "-");
+              //ws_par_ch[14]=0;
+              //ws_isUSB_fileopen=isUSB_fileopen;
+              ws_par_chN[14][ws_cnt]=0;
+              ws_isUSB_fileopenN[ws_cnt]=isUSB_fileopen;
+              
+          }
+          //else if(ws_par_ch[12]) {
+          else if(ws_par_chN[12][ws_cnt]) {
+            len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"progress\" : \"%d\"}", "print_progress", ws_sdpos*100/ws_filesize);
+            //ws_par_ch[12]=0;
+            ws_par_chN[12][ws_cnt]=0;
+            ws_isUSB_fileopenN[ws_cnt]=isUSB_fileopen;
+          }
+          else
+          len = snprintf(responseWS, sizeof (responseWS), "{\"event\" : \"%s%d\"}", "ping", ws_cnt);
+        }
+        else {
+        /*int*/ len = snprintf(responseWS, sizeof (responseWS),
+              "{\"event\" : \"%s\","
+              " \"name\" : \"%s\","
+              " \"version\" : \"%s\","
+              " \"material\" : \"%s\","
+              " \"filename\" : \"%s\","
+              " \"elapsed_time\" : \"%d\","
+              " \"estimated_time\" : \"%s\","
+              " \"device_model\" : \"%s\","
+              " \"nozzle\" : \"%s\","
+              " \"is_printing\" : \"%s\","
+              " \"is_paused\" : \"%s\","
+              " \"is_heating\" : \"%s\","
+              " \"is_preheat\" : \"%s\","
+              " \"is_calibrating\" : \"%s\","
+              " \"is_bed_occupied\" : \"%s\","
+              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              websocket_task_firstN[ws_cnt]=0;
+        }  
+
+        ///*if(eth_in==0)*/ {eth_in=1; ethernetif_input(&gnetif); eth_in=0;}
+        if (len < sizeof (responseWS))
+            websocket_write(pcbWS, (unsigned char *) responseWS, len, WS_TEXT_MODE);
+
+        ///*if(eth_in==0)*/ {eth_in=1; ethernetif_input(&gnetif); eth_in=0;}
+        //while(websocket_write(pcbWS, (unsigned char *) responseWS, len, WS_TEXT_MODE)!=ERR_OK); //websocket_write(pcbWS, (unsigned char *) responseWS, len, WS_TEXT_MODE);
+    //}
+    //Delay between tasks.
+    //char x;
+    x=0;
+    waiting_task++;
+    if(waiting_task > 15) waiting_task=0;
+    websocketTimerN[waiting_task]=HAL_GetTick();
+    //websocketTimerN[waiting_task]+=1000;
+    //Check whether task is created. If not continue to the next one.
+    while(websocket_task_createdN[waiting_task]==0) {
+      waiting_task++;
+      if(waiting_task > 15) waiting_task=0;
+      websocketTimerN[waiting_task]=HAL_GetTick();
+      //websocketTimerN[waiting_task]+=1000;
+      //x++;
+      //No active task remained.
+      if (x>15) {
+        waiting_task=0;
+        //Reset all timers here.
+        websocketTimerN[0]=HAL_GetTick();
+        //websocketTimerN[waiting_task]+=1000;
+        return; //No task remained.
+      }
+      x++;
+    }
+    //if(eth_in==0) {eth_in=1; ethernetif_input(&gnetif); eth_in=0;}
+    //ws_act=0;
+  }
+}
+
 /**
   * @brief  writes received data in flash    
   * @param  ptr: data pointer
   * @param  len: data length
   * @retval None 
   */
-static void IAP_HTTP_writedata(char * ptr, uint32_t len)            
+/*static void IAP_HTTP_writedata(char * ptr, uint32_t len)
 {
   uint32_t count, i=0, j=0;
   
-  /* check if any left bytes from previous packet transfer*/
-  /* if it is the case do a concat with new data to create a 32-bit word */
+  // check if any left bytes from previous packet transfer
+  // if it is the case do a concat with new data to create a 32-bit word 
   if (LeftBytes)
   {
     while(LeftBytes<=3)
@@ -1108,21 +3533,21 @@ static void IAP_HTTP_writedata(char * ptr, uint32_t len)
     //FLASH_If_Write(&FlashWriteAddress, (uint32_t*)(LeftBytesTab),1);
     LeftBytes =0;
     
-    /* update data pointer */
+    // update data pointer
     ptr = (char*)(ptr+j);
     len = len -j;
   }
   
-  /* write received bytes into flash */
+  // write received bytes into flash 
   count = len/4;
   
-  /* check if remaining bytes < 4 */
+  // check if remaining bytes < 4 
   i= len%4;
   if (i>0)
   {
     if (TotalReceived != size)
     {
-      /* store bytes in LeftBytesTab */
+      // store bytes in LeftBytesTab 
       LeftBytes=0;
       for(;i>0;i--)
       LeftBytesTab[LeftBytes++] = *(char*)(ptr+ len-i);  
@@ -1130,40 +3555,37 @@ static void IAP_HTTP_writedata(char * ptr, uint32_t len)
     else count++;
   }
   //FLASH_If_Write(&FlashWriteAddress, (uint32_t*)ptr ,count);
-}
+}*/
 //#endif
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-int test_var1=0;
-int test_var2=0;
+//int test_var1=0;
+//int test_var2=0;
 int bed_temp=25;
 int extrd_temp=100;
 int print_percent=0;
-void DynWebPage(/*struct netconn *conn*/void)
+
+/*void DynWebPage(void)
 {
-  /*portCHAR*/char PAGE_BODY[512];
-  /*portCHAR*/char pagehits[10] = {0};
+  char PAGE_BODY[512];
+  char pagehits[10] = {0};
   char buf_t[20];
 
   memset(PAGE_BODY, 0,512);
   buf_html[0]=0; buf_t[0]=0;
-  //memset(buf_html, 0,5000);
-  //memset(buf_t, 0,10);
 
-  /* Update the hit count */
+  // Update the hit count
   nPageHits++;
   sprintf(pagehits, "%d", (int)nPageHits);
   strcat(PAGE_BODY, pagehits);
   strcat((char *)PAGE_BODY, "<pre><br>Name          State  Priority  Stack   Num" );
   strcat((char *)PAGE_BODY, "<br>---------------------------------------------<br>");
 
-  /* The list of tasks and their status */
+  // The list of tasks and their status 
   //osThreadList((unsigned char *)(PAGE_BODY + strlen(PAGE_BODY)));
-  /* Write the rest of the string. */
+  // Write the rest of the string. 
   sprintf(buf_t, "%s", "test_var1"); strcat(PAGE_BODY,buf_t);
-  sprintf(/*pcWriteBuffer*/buf_t, "\t%d\r\n", test_var1);
-  //sprintf(/*pcWriteBuffer*/PAGE_BODY+110, "\t%d\r\n", (int)nPageHits);
-  //pcWriteBuffer += strlen( pcWriteBuffer );
+  sprintf(buf_t, "\t%d\r\n", test_var1);
   strcat(PAGE_BODY,buf_t);
 
   sprintf(buf_t, "%s", "test_var2"); strcat(PAGE_BODY,buf_t);
@@ -1183,102 +3605,64 @@ void DynWebPage(/*struct netconn *conn*/void)
   strcat(PAGE_BODY,buf_t);
 
   strcat((char *)PAGE_BODY, "<br><br>---------------------------------------------");
-  //strcat((char *)PAGE_BODY, "<br>B : Blocked, R : Ready, D : Deleted, S : Suspended<br>");
 
-  /* Send the dynamically generated page */
+  // Send the dynamically generated page 
   //netconn_write(conn, PAGE_START, strlen((char*)PAGE_START), NETCONN_COPY);
   //netconn_write(conn, PAGE_BODY, strlen(PAGE_BODY), NETCONN_COPY);
   strcpy(buf_html, (char *)PAGE_START);
   strcat(buf_html, PAGE_BODY);
 
-  //Simulation of test variables
-  test_var1++;
-  test_var2+=2;
-  //print_percent+=1;
-  //if(print_percent>100) print_percent=1;
-}
+}*/
 
 void DynWebPage2(void)
 {
   buf_html[0]=0;
-  //memset(buf_html, 0,5000);
-
-  //Simulation of test variables
-  test_var1++;
-  //test_var2+=2;
-  //print_percent+=1;
-  //if(print_percent>100) print_percent=1;
-
   int resp_len=strlen((const char *)response);
-  //sprintf((char *)(response+resp_len-3), "%03d", test_var1);
+  
   strcpy(buf_html, (char *)response);
-  //memcpy(buf_html,response,resp_len);
-  sprintf((char *)(buf_html+resp_len-3), "%03d", /*test_var1*//*thermalManager.temp_bed.celsius*/Bed_temp);
+  sprintf((char *)(buf_html+resp_len-3), "%03d", /*thermalManager.temp_bed.celsius*/Bed_temp);
 }
 
 void DynWebPage4(void)
 {
   buf_html[0]=0;
-  //memset(buf_html, 0,5000);
-
-  //test_var1++;
-  test_var2+=2;
-  //print_percent+=1;
-  //if(print_percent>100) print_percent=1;
-
   int resp_len=strlen((const char *)response);
-  //sprintf((char *)(response+resp_len-3), "%03d", test_var2);
+  
   strcpy(buf_html, (char *)response);
-  //memcpy(buf_html,response,resp_len);
-  sprintf((char *)(buf_html+resp_len-3), "%03d", /*test_var2*/Extr_temp);
+  sprintf((char *)(buf_html+resp_len-3), "%03d", Extr_temp);
 }
 
-void DynWebPage5(void)
+/*void DynWebPage5(void)
 {
   buf_html[0]=0;
-
-  //Simulation of test variables
-  //test_var1++;
-  //test_var2+=3;
-  //print_percent+=1;
-  //if(print_percent>100) print_percent=1;
-
   int resp_len=strlen((const char *)response);
-  //sprintf((char *)(response+resp_len-3), "%03d", test_var2*2);
+
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%03d", test_var2*2);
-}
+}*/
 
-void DynWebPage3(void)
+/*void DynWebPage3(void)
 {
   buf_html[0]=0;
 
   int resp_len=strlen((const char *)resp2);
-  if(LEDstate==0x31) sprintf((char *)(resp2+resp_len-/*3*/20), "%20s", /*"PRNT ON   1234567890"*/"ON"); //Requires exact length.
-  else sprintf((char *)(resp2+resp_len-/*3*/20), "%s", "PRNT OFF  1234567890");
+  if(LEDstate==0x31) sprintf((char *)(resp2+resp_len-20), "%20s", "PRNT ON   1234567890"); //Requires exact length.
+  else sprintf((char *)(resp2+resp_len-20), "%s", "PRNT OFF  1234567890");
   strcpy(buf_html, (char *)resp2);
-}
+}*/
 
-void DynWebPage8(void)
+/*void DynWebPage8(void)
 {
   buf_html[0]=0;
-
-  //int resp_len=strlen((const char *)response);
-  //strcpy(buf_html, (char *)response);
-  //sprintf((char *)(buf_html+resp_len-3), "%s", "GCO");
 
   int resp_len=strlen((const char *)resp2);
   strcpy(buf_html, (char *)resp2);
   sprintf((char *)(buf_html+resp_len-20), "%20s", "Filename.GCO");
-}
+}*/
 
 void DynWebPage20(void)
 {
   buf_html[0]=0;
-
-  //int resp_len=strlen((const char *)response);
-  //strcpy(buf_html, (char *)response);
-  //sprintf((char *)(buf_html+resp_len-3), "%s", "GCO");
 
   int resp_len=strlen((const char *)resp2);
   strcpy(buf_html, (char *)resp2);
@@ -1289,9 +3673,6 @@ void DynWebPage9(void)
 {
   buf_html[0]=0;
 
-  //print_percent+=1;
-  //if(print_percent>100) print_percent=1;
-
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%s", "PLA");
@@ -1301,7 +3682,6 @@ void DynWebPage01(void)
 {
   buf_html[0]=0;
 
-  //x_pos++;
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%03d", x_pos/*current_position.*/);
@@ -1312,8 +3692,6 @@ void DynWebPage02(void)
 {
   buf_html[0]=0;
 
-  //y_pos++;
-
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%03d", y_pos);
@@ -1322,8 +3700,6 @@ void DynWebPage02(void)
 void DynWebPage03(void)
 {
   buf_html[0]=0;
-
-  //z_pos++;
 
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
@@ -1334,7 +3710,6 @@ void DynWebPage21(void)
 {
   buf_html[0]=0;
 
-  //print_percent=card.percentDone();
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%03d", print_percent);
@@ -1344,7 +3719,6 @@ void DynWebPage22(void)
 {
   buf_html[0]=0;
 
-  //print_percent=card.percentDone();
   int resp_len=strlen((const char *)response);
   strcpy(buf_html, (char *)response);
   sprintf((char *)(buf_html+resp_len-3), "%03d", print_stat);

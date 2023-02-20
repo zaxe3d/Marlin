@@ -1582,7 +1582,7 @@
  * field.
  */
 #if !defined LWIP_NETIF_HOSTNAME || defined __DOXYGEN__
-#define LWIP_NETIF_HOSTNAME           1  //0 //Elsan test
+#define LWIP_NETIF_HOSTNAME             1 //0
 #endif
 
 /**

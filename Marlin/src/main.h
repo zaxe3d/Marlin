@@ -27,10 +27,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
-#include "stm324x9i_eval.h"
-//#include "stm32f4xx_nucleo_144.h"
-//#include "stm324x9i_eval_lcd.h"
-#include "stm324x9i_eval_io.h"
+//#include "stm324x9i_eval.h"
+//#include "stm324x9i_eval_io.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

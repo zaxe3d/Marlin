@@ -44,12 +44,17 @@
 #include "lwip/def.h"
 #include "fsdata.h"
 
-
-
+struct fs_file2 { //For http_recv2.
+  char *data;
+  long int len;
+};
 
 struct fs_file {
   char *data;
-  int len;
+  long int len;
+  int index;
+  void *pextension;
+  u8_t http_header_included;
 };
 
 //void IAP_httpd_init(void);  //Elsan need for extern "C"

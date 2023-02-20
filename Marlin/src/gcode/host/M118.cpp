@@ -23,8 +23,8 @@
 #include "../gcode.h"
 #include "../../core/serial.h"
 
-#include "../../lcd/extui/lib/dgus/DGUSDisplayDef.h"
-#include "../../lcd/extui/lib/dgus/DGUSScreenHandler.h"
+#include "../../lcd/extui/dgus/DGUSDisplayDef.h"
+#include "../../lcd/extui/dgus/DGUSScreenHandler.h"
 char WIFI_IP[64]; //Elsan
 extern char ETH_IP[];
 
@@ -57,21 +57,10 @@ void GcodeSuite::M118() {
     while (*p == ' ') ++p;
   }
 
-  #if HAS_MULTI_SERIAL
-    const int8_t old_serial = serial_port_index;
-    if (WITHIN(port, 0, NUM_SERIAL))
-      serial_port_index = (
-        port == 0 ? SERIAL_BOTH
-        : port == 1 ? SERIAL_PORT
-        #ifdef SERIAL_PORT_2
-          : port == 2 ? SERIAL_PORT_2
-        #endif
-        : SERIAL_PORT
-      );
-  #endif
+  PORT_REDIRECT(WITHIN(port, 0, NUM_SERIAL) ? (port ? SERIAL_PORTMASK(port - 1) : SerialMask::All) : multiSerial.portMask);
 
   if (hasE) SERIAL_ECHO_START();
-  if (hasA) SERIAL_ECHOPGM("// ");
+  if (hasA) SERIAL_ECHOPGM("//");
   SERIAL_ECHOLN(p);
 
   if(strstr(p,"WIFI_IP")) {
@@ -80,6 +69,4 @@ void GcodeSuite::M118() {
     dgusdisplay.WriteVariable(VP_ETH_ADDRESS, ETH_IP, 32, true);
     dgusdisplay.WriteVariable(VP_WIFI_AVAILABLE, static_cast<uint16_t>(strstr(WIFI_IP, "unset") != NULL ? 0 : 1));
   }
-
-  TERN_(HAS_MULTI_SERIAL, serial_port_index = old_serial);
 }

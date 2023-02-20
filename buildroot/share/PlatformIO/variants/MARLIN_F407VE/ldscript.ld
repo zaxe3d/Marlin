@@ -21,7 +21,7 @@
 *****************************************************************************
 ** @attention
 **
-** <h2><center>&copy; COPYRIGHT(c) 2014 Ac6</center></h2>
+** Copyright (c) 2014 Ac6
 **
 ** Redistribution and use in source and binary forms, with or without modification,
 ** are permitted provided that the following conditions are met:
@@ -58,14 +58,12 @@ _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
 /* Specify the memory areas */
-
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = LD_MAX_DATA_SIZE
 CCMRAM (rw)      : ORIGIN = 0x10000000, LENGTH = 64K
-/*FLASH (rx)      : ORIGIN = 0x8000000 + LD_FLASH_OFFSET, LENGTH = LD_MAX_SIZE - LD_FLASH_OFFSET*/
-FLASH (rx)      : ORIGIN = 0x8008000, LENGTH = 1024K - 32K
-/*FLASH (rx)      : ORIGIN = 0x8008000, LENGTH = 992K*/
+FLASH (rx)      : ORIGIN = 0x8000000 + LD_FLASH_OFFSET, LENGTH = LD_MAX_SIZE - LD_FLASH_OFFSET
+/*FLASH (rx)      : ORIGIN = 0x8008000, LENGTH = 1024K - 32K*/
 }
 
 /* Define output sections */
@@ -172,7 +170,7 @@ SECTIONS
   . = ALIGN(4);
   .bss :
   {
-    /* This is used by the startup in order to initialize the .bss secion */
+    /* This is used by the startup in order to initialize the .bss section */
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
