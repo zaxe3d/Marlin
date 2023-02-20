@@ -3379,4 +3379,5 @@
 //#define SERVO_DETACH_GCODE
 
 #define FIRST_LAYER_CALIBRATION //Elsan
+#define FIRST_LAYER_CAL // GO
 #define WATCHDOG_DURATION_8S    //Elsan
