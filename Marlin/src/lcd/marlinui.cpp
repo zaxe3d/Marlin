@@ -28,6 +28,10 @@
   #include "../feature/leds/leds.h"
 #endif
 
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../feature/leds/printer_event_leds.h"
+#endif
+
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "../feature/host_actions.h"
 #endif
@@ -1643,6 +1647,9 @@ void MarlinUI::init() {
     TERN_(HOST_PROMPT_SUPPORT, hostui.prompt_open(PROMPT_INFO, F("UI Aborted"), FPSTR(DISMISS_STR)));
     LCD_MESSAGE(MSG_PRINT_ABORTED);
     TERN_(HAS_MARLINUI_MENU, return_to_status());
+    #if ENABLED(PRINTER_EVENT_LEDS)
+      printerEventLEDs.onPrintAborted();
+    #endif
   }
 
   #if BOTH(HAS_MARLINUI_MENU, PSU_CONTROL)

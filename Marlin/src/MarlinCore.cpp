@@ -251,6 +251,10 @@ static void MX_I2C1_Init(void);
   #include "feature/direct_stepping.h"
 #endif
 
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "feature/leds/printer_event_leds.h"
+#endif
+
 #if ENABLED(HOST_ACTION_COMMANDS)
   #include "feature/host_actions.h"
 #endif
@@ -537,6 +541,9 @@ void startOrResumeJob() {
 
     #ifdef EVENT_GCODE_SD_ABORT
       queue.inject(F(EVENT_GCODE_SD_ABORT));
+    #endif
+    #if ENABLED(PRINTER_EVENT_LEDS)
+      printerEventLEDs.onPrintAborted();
     #endif
 
     TERN_(PASSWORD_AFTER_SD_PRINT_ABORT, password.lock_machine());

@@ -39,6 +39,9 @@
 #if ENABLED(POWER_LOSS_RECOVERY)
   #include "../../../feature/powerloss.h"
 #endif
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../../../feature/leds/printer_event_leds.h"
+#endif
 
 #include "DGUSDisplay.h"
 #include "DGUSVPVariable.h"
@@ -74,6 +77,9 @@ void DGUSDisplay::InitDisplay() {
   }
 
   RequestScreen(TERN(SHOW_BOOTSCREEN, DGUSLCD_SCREEN_BOOT, DGUSLCD_SCREEN_MAIN));
+  #if ENABLED(PRINTER_EVENT_LEDS)
+    leds.set_blue();
+  #endif
 }
 
 void DGUSDisplay::WriteVariable(uint16_t adr, const void *values, uint8_t valueslen, bool isstr) {

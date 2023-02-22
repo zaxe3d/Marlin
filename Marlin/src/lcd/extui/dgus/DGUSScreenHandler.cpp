@@ -1121,7 +1121,7 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
   //filament_data_t filament_data;
   static filament_data_t calibration_data;  //Elsan from old version
 
-  /*void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
+  void DGUSScreenHandler::HandleFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM("HandleFilamentOption");
 
     uint8_t e_temp = 0;
@@ -1196,17 +1196,17 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
       filament_data.target_temp = thermalManager.temp_hotend[filament_data.extruder].target;
       GotoScreen(DGUSLCD_SCREEN_FILAMENT_HEATING);
     }
-  }*/
+  }
 
-  /*void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
+  void DGUSScreenHandler::HandleFilamentLoadUnload(DGUS_VP_Variable &var) {
     DEBUG_ECHOLNPGM("HandleFilamentLoadUnload");
     if (filament_data.action <= 0 || filament_data.waiting_confirmation) return;
 
     if (thermalManager.temp_hotend[filament_data.extruder].celsius >= filament_data.target_temp ||
         filament_data.heated) { // meaning if already got pass this check don't bother checking anymore!
-      float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME * 3;
+      float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME;// * 3;
 
-      if (((filament_data.action == 1 || filament_data.action == 2) && filament_data.processed_length > DGUS_FILAMENT_END_AFTER) ||
+      if (((filament_data.action == 1 || filament_data.action == 2) && filament_data.processed_length > DGUS_FILAMENT_END_AFTER / 10) ||
           (filament_data.action == 3 && filament_data.processed_length > DGUS_FILAMENT_PURGE_END_AFTER)) { // stop loading/unloading after...
         if (filament_data.action == 1 || filament_data.action == 3) { // if loading filament or purging
           filament_data.waiting_confirmation = true;
@@ -1216,6 +1216,7 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
             : DGUS_FILAMENT_LOAD_SLOW_AFTER + 1; // load
 
           GotoScreen(DGUSLCD_SCREEN_FILAMENT_CONFIRM);
+          filament_data.processed_length = 0;
           return; // will go to confirm no need to continue...
         }
 
@@ -1264,7 +1265,7 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
       }
       ExtUI::setAxisPosition_mm(movevalue, filament_data.extruder);
     }
-  }*/
+  }
 
   void DGUSScreenHandler::HandleSDFilamentOption(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM(" HandleSDFilamentOption");
@@ -1309,7 +1310,7 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     //float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME * 3;
     float movevalue = DGUS_FILAMENT_LOAD_LENGTH_PER_TIME;
 
-    if (((filament_data.action == 1 || filament_data.action == 2) && filament_data.processed_length > DGUS_FILAMENT_END_AFTER/10) ||
+    if (((filament_data.action == 1 || filament_data.action == 2) && filament_data.processed_length > DGUS_FILAMENT_END_AFTER / 10) ||
          (filament_data.action == 3 && filament_data.processed_length > DGUS_FILAMENT_PURGE_END_AFTER)) { // stop loading/unloading after...
       filament_data.action = 0;
       GotoScreen(DGUSLCD_SCREEN_SDUTILITY);
@@ -1332,8 +1333,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
     ExtUI::setAxisPosition_mm(movevalue, filament_data.extruder);
   }
 #endif
-
-//Elsan
 
 #if ENABLED(FIRST_LAYER_CALIBRATION)
   void DGUSScreenHandler::HandleFirstLayerCalibrationOption(DGUS_VP_Variable &var, void *val_ptr) {
@@ -1400,7 +1399,6 @@ void DGUSScreenHandler::HandleHeaterControl(DGUS_VP_Variable &var, void *val_ptr
   }
 #endif
 
-//Elsan
 void DGUSScreenHandler::HandleFilamentConfirmation(DGUS_VP_Variable &var, void *val_ptr) {
     UNUSED(var); UNUSED(val_ptr);
     filament_data.waiting_confirmation = false;
@@ -1413,7 +1411,7 @@ void DGUSScreenHandler::HandleFilamentInit(DGUS_VP_Variable &var, void *val_ptr)
     queue.enqueue_one_now(buf);
     sprintf(buf, "G90"); // absolute mode.
     queue.enqueue_one_now(buf);
-    sprintf(buf, "G1 X%d Y%d Z%d F4200", X_MAX_POS / 2, Y_MAX_POS / 2, Z_MAX_POS); // center position
+    sprintf(buf, "G1 X%d Y%d Z%d F4200", (int)X_MAX_POS / 2, (int)Y_MAX_POS / 2, (int)Z_MAX_POS); // center position
     queue.enqueue_one_now(buf);
 }
 

@@ -31,6 +31,9 @@ extern DGUSScreenHandler ScreenHandler; //Elsan
 #include "../gcode.h"
 #include "../../sd/cardreader.h"
 
+#if ENABLED(PRINTER_EVENT_LEDS)
+  #include "../../feature/leds/printer_event_leds.h"
+#endif
 #if ENABLED(DWIN_LCD_PROUI)
   #include "../../lcd/e3v2/proui/dwin.h"
 #endif
@@ -54,6 +57,9 @@ void GcodeSuite::M524() {
 
   #endif
 
+  #if ENABLED(PRINTER_EVENT_LEDS)
+    printerEventLEDs.onPrintAborted();
+  #endif
   ScreenHandler.GotoScreen(DGUSLCD_SCREEN_MAIN);  //Elsan DGUS screen not updated after abort from XDesktop.
 }
 

@@ -1878,10 +1878,10 @@
     #define DGUS_FILAMENT_LOADUNLOAD
     #if ENABLED(DGUS_FILAMENT_LOADUNLOAD)
       #define DGUS_FILAMENT_PURGE_LENGTH 10
-      #define DGUS_FILAMENT_LOAD_LENGTH_PER_TIME 1.08 //2 //0.5 // (mm) Adjust in proportion to DGUS_UPDATE_INTERVAL_MS
-      #define DGUS_FILAMENT_LOAD_SLOW_AFTER 350 //Elsan
-      #define DGUS_FILAMENT_END_AFTER 550 //Elsan
-      #define DGUS_FILAMENT_PURGE_END_AFTER 75  //Elsan
+      #define DGUS_FILAMENT_LOAD_LENGTH_PER_TIME 1.08
+      #define DGUS_FILAMENT_LOAD_SLOW_AFTER 350
+      #define DGUS_FILAMENT_END_AFTER 550
+      #define DGUS_FILAMENT_PURGE_END_AFTER 75
     #endif
 
     #define DGUS_UI_WAITING               // Show a "waiting" screen between some screens

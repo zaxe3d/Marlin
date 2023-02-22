@@ -99,7 +99,6 @@ typedef struct LEDColor {
  */
 
 #define LEDColorOff()             LEDColor(  0,   0,   0)
-#define LEDColorRed()             LEDColor(255,   0,   0)
 #if ENABLED(LED_COLORS_REDUCE_GREEN)
   #define LEDColorOrange()        LEDColor(255,  25,   0)
   #define LEDColorYellow()        LEDColor(255,  75,   0)
@@ -107,12 +106,13 @@ typedef struct LEDColor {
   #define LEDColorOrange()        LEDColor(255,  80,   0)
   #define LEDColorYellow()        LEDColor(255, 255,   0)
 #endif
-#define LEDColorGreen()           LEDColor(  0, 255,   0)
-#define LEDColorBlue()            LEDColor(  0,   0, 255)
+#define LEDColorRed()             LEDColor(255,   2,   0)
+#define LEDColorGreen()           LEDColor(  5, 255,   0)
+#define LEDColorBlue()            LEDColor(  0,  55, 170)
 #define LEDColorIndigo()          LEDColor(  0, 255, 255)
 #define LEDColorViolet()          LEDColor(255,   0, 255)
 #if HAS_WHITE_LED && DISABLED(RGB_LED)
-  #define LEDColorWhite()         LEDColor(  0,   0,   0, 255)
+#define LEDColorWhite()         LEDColor(  0,   0,   0, 255)
 #else
   #define LEDColorWhite()         LEDColor(255, 255, 255)
 #endif

@@ -38,7 +38,7 @@ private:
     static bool leds_off_after_print;
   #endif
 
-  static void set_done() { TERN(LED_COLOR_PRESETS, leds.set_default(), leds.set_off()); }
+  static void set_done() { leds.set_blue(); }
 
 public:
   #if HAS_TEMP_HOTEND
@@ -74,6 +74,10 @@ public:
         safe_delay(2000);
         set_done();
       #endif
+    }
+
+    static inline void onPrintAborted() {
+      set_done();
     }
 
     static void onResumeAfterWait() {

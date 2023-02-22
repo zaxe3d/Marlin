@@ -64,7 +64,7 @@ PrinterEventLEDs printerEventLEDs;
       old_intensity = blue;
       pel_set_rgb(255, 0, 255 - blue);
     }*/
-    leds.set_red(); //Elsan: old version.
+    leds.set_red();
   }
 
 #endif
@@ -77,7 +77,7 @@ PrinterEventLEDs printerEventLEDs;
       old_intensityB = red;
       pel_set_rgb(red, 0, 255);
     }*/
-    leds.set_violet(); //Elsan: old version.
+    leds.set_red();
   }
 
 #endif
@@ -90,7 +90,7 @@ PrinterEventLEDs printerEventLEDs;
       old_intensity = green;
       pel_set_rgb(255, green, 255);
     }*/
-    leds.set_orange(); //Elsan: does not exist in prev version.
+    leds.set_red();
   }
 
 #endif
