@@ -279,7 +279,7 @@ void DGUSScreenHandler::HandleManualMove(DGUS_VP_Variable &var, void *val_ptr) {
   void DGUSScreenHandler::HandleLiveAdjustZ(DGUS_VP_Variable &var, void *val_ptr) {
     DEBUG_ECHOLNPGM("HandleLiveAdjustZ");
     int16_t flag  = swap16(*(uint16_t*)val_ptr),
-            steps = flag ? -20 : 20;
+            steps = flag ? -4 : 4;
     ExtUI::smartAdjustAxis_steps(steps, ExtUI::axis_t::Z, true);
     ForceCompleteUpdate();
   }
