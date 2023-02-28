@@ -124,6 +124,7 @@ char filename[/*40*/100]; //from http_recv2;
 extern bool wait_for_user;
 
    char ws_material[32]="-";
+   char ws_nozzle[32]="-";
    char ws_filename[/*64*/100]="";
    int  ws_elapsed_time=0;
    char ws_estimated_time[32]="-";
@@ -1210,6 +1211,7 @@ void websocket_cb(struct tcp_pcb *pcb, uint8_t *data, u16_t data_len, uint8_t mo
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -1217,7 +1219,7 @@ void websocket_cb(struct tcp_pcb *pcb, uint8_t *data, u16_t data_len, uint8_t mo
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
 
     //websocket_write(pcb, response, len, WS_TEXT_MODE);
     websocket_write(pcbN[a], response, len, WS_TEXT_MODE);
@@ -2358,7 +2360,7 @@ static err_t http_recv2(void *arg, struct tcp_pcb *pcb,  struct pbuf *p, err_t e
       }
       */
       /* process POST request for file upload and incoming data packets after POST request*/
-      else if (((strncmp(data, "POST /upload.cgi",16)==0)||(DataFlag >=1))&&(htmlpage == FileUploadPage))
+      else if (((strncmp(data, "POST /upload.cgi",16)==0)||(DataFlag >=1)))
       { 
         DataOffset =0;
         
@@ -3112,6 +3114,7 @@ void websocket_task(void *pvParameter)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3119,7 +3122,7 @@ void websocket_task(void *pvParameter)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
               ws_par_ch[16]=0;
               ws_noUSB=noUSB;
               //ws_par_ch[15]=0;
@@ -3134,6 +3137,7 @@ void websocket_task(void *pvParameter)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3141,7 +3145,7 @@ void websocket_task(void *pvParameter)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
                             
                 ws_par_ch[15]=0; //broadcastStates for print finished.
                 ws_isUSB_fileopen=isUSB_fileopen;
@@ -3157,6 +3161,7 @@ void websocket_task(void *pvParameter)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3164,7 +3169,7 @@ void websocket_task(void *pvParameter)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
                             
                 ws_par_ch[13]=0; //broadcastStates for print finished.
                 ws_isUSB_fileopen=isUSB_fileopen;
@@ -3201,6 +3206,7 @@ void websocket_task(void *pvParameter)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3208,7 +3214,7 @@ void websocket_task(void *pvParameter)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
               websocket_task_firstN[0]=0;
         }  
 
@@ -3358,6 +3364,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3365,7 +3372,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
               //ws_par_ch[16]=0;
               //ws_noUSB=noUSB;
               ws_par_chN[16][ws_cnt]=0;
@@ -3382,6 +3389,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3389,7 +3397,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
                             
                 //ws_par_ch[15]=0; //broadcastStates for print finished.
                 //ws_isUSB_fileopen=isUSB_fileopen;
@@ -3408,6 +3416,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3415,7 +3424,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "states_update", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
                             
                 //ws_par_ch[13]=0; //broadcastStates for print finished.
                 //ws_isUSB_fileopen=isUSB_fileopen;
@@ -3457,6 +3466,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"elapsed_time\" : \"%d\","
               " \"estimated_time\" : \"%s\","
               " \"device_model\" : \"%s\","
+              " \"protocol\" : \"%s\","
               " \"nozzle\" : \"%s\","
               " \"is_printing\" : \"%s\","
               " \"is_paused\" : \"%s\","
@@ -3464,7 +3474,7 @@ void websocket_taskN(void *pvParameter, char ws_cnt)
               " \"is_preheat\" : \"%s\","
               " \"is_calibrating\" : \"%s\","
               " \"is_bed_occupied\" : \"%s\","
-              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
+              " \"is_usb_present\" : \"%s\"}", "hello", "zaxe_X3_eth", "1.0.0", ws_material, ws_filename, ws_elapsed_time, ws_estimated_time, "x3", "http", "-", is_printing, is_paused, is_heating, is_preheat, is_calibrating, is_bed_occupied, is_usb_present);
               websocket_task_firstN[ws_cnt]=0;
         }  
 
